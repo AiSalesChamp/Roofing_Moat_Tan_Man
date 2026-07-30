@@ -1,0 +1,24 @@
+# Engine-owned Postgres. Port 5433 deliberately — 5432 belongs to twenty-dev-db.
+# The engine is the system of record for parcels and distress events; it must not
+# share a database with the CRM, or a Twenty migration can take the warehouse down.
+services:
+  engine-db:
+    image: postgis/postgis:16-3.4
+    container_name: re-lead-engine-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: engine
+      POSTGRES_PASSWORD: engine
+      POSTGRES_DB: re_lead_engine
+    ports:
+      - '5433:5432'
+    volumes:
+      - engine-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U engine -d re_lead_engine']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  engine-db-data:

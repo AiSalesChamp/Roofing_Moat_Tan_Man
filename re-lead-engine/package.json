@@ -1,0 +1,33 @@
+{
+  "name": "re-lead-engine",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": "^24.5.0",
+    "yarn": ">=4.0.2"
+  },
+  "packageManager": "yarn@4.9.2",
+  "scripts": {
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d && node src/db/migrate.ts",
+    "db:migrate": "node src/db/migrate.ts",
+    "fips:load": "node src/cli/fips-load.ts",
+    "ingest": "node src/cli/ingest.ts",
+    "score": "node src/cli/score.ts",
+    "promote": "node src/cli/promote.ts",
+    "health": "node src/cli/health.ts",
+    "webhook": "node src/server/webhook.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.7.2",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.9.3"
+  }
+}

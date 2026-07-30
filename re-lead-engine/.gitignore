@@ -1,0 +1,7 @@
+node_modules/
+.env
+.env.local
+*.log
+# Appraisal rolls are large county bulk files; keep them out of git.
+data/rolls/
+data/cache/
