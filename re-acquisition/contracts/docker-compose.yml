@@ -1,0 +1,49 @@
+# Contract pipeline services: DocuSeal (e-sign) + Gotenberg (PDF render)
+# Run: docker compose -f re-acquisition/contracts/docker-compose.yml up -d
+
+name: re-contracts
+
+services:
+  docuseal:
+    image: docuseal/docuseal:latest
+    ports:
+      - '3030:3000'
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@docuseal-db:5432/docuseal
+      SECRET_KEY_BASE: ${DOCUSEAL_SECRET_KEY_BASE:-change-me-in-production-use-openssl-rand-hex-64}
+    volumes:
+      - docuseal-data:/data
+    depends_on:
+      docuseal-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  docuseal-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: docuseal
+    volumes:
+      - docuseal-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U postgres -h localhost -d docuseal
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    ports:
+      # 3002 (not 3001) to avoid clashing with the twenty-front dev server on 3001
+      - '3002:3000'
+    command:
+      - 'gotenberg'
+      - '--chromium-disable-javascript=true'
+      - '--chromium-allow-list=file:///tmp/.*'
+    restart: unless-stopped
+
+volumes:
+  docuseal-data:
+  docuseal-db-data:

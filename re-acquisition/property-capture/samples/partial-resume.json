@@ -1,0 +1,73 @@
+{
+  "captureId": "018f3a2d-9e63-7012-bc33-4d5e6f708192",
+  "schemaVersion": "1.0",
+  "repId": "5b2e1c9a-3d44-4f88-9012-aabbccddeeff",
+  "capturedAt": "2026-06-09T16:12:00-05:00",
+  "timezone": "America/Chicago",
+  "deviceType": "REALWEAR",
+  "deviceModel": "RealWear Navigator 520",
+  "appVersion": "1.4.2",
+  "networkType": "CELLULAR",
+  "batteryLow": false,
+  "locale": "en-US",
+  "clientSeq": 513,
+  "geo": { "lat": 39.7817, "lng": -89.6501, "accuracyM": 15, "altitudeM": null, "capturedAt": "2026-06-09T16:11:50-05:00" },
+  "captureOrigin": "INSPECTION",
+  "target": {
+    "opportunityId": "9a8b7c6d-5e44-4f33-8c22-110099887766",
+    "personId": null,
+    "matchHints": null
+  },
+  "audio": {
+    "fileId": null,
+    "pendingMediaId": "aa000000-1111-4222-8333-444455556666",
+    "filename": "inspection.m4a",
+    "codec": "aac",
+    "container": "m4a",
+    "sampleRateHz": 16000,
+    "durationSec": 121.0,
+    "audioChannel": "MONO",
+    "channelCount": 1,
+    "bitrateKbps": 48,
+    "language": "en-US",
+    "sizeBytes": 760000,
+    "sha256": "3973e022e93220f9212c18d0d0c543ae7c309e46640da93a4a0314de999f5112",
+    "caption": "full roof inspection memo"
+  },
+  "photos": [
+    {
+      "fileId": "f4444444-5555-4666-8777-888899990000",
+      "pendingMediaId": null,
+      "filename": "ridge.jpg",
+      "mimeType": "image/jpeg",
+      "sequenceIndex": 0,
+      "widthPx": 2048,
+      "heightPx": 1536,
+      "sizeBytes": 1210000,
+      "compressionQuality": 0.7,
+      "sha256": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+      "caption": "ridge line - prior upload",
+      "tags": ["overview", "ridge"],
+      "exif": { "gps": null, "orientation": 1, "timestamp": "2026-06-09T16:09:00-05:00" },
+      "capturedAt": "2026-06-09T16:09:00-05:00"
+    },
+    {
+      "fileId": null,
+      "pendingMediaId": "bb000000-1111-4222-8333-444455557777",
+      "filename": "flashing.jpg",
+      "mimeType": "image/jpeg",
+      "sequenceIndex": 1,
+      "widthPx": 2048,
+      "heightPx": 1536,
+      "sizeBytes": 1340000,
+      "compressionQuality": 0.7,
+      "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "caption": "step flashing rust",
+      "tags": ["flashing", "damage-closeup"],
+      "exif": { "gps": null, "orientation": 6, "timestamp": "2026-06-09T16:10:30-05:00" },
+      "capturedAt": "2026-06-09T16:10:30-05:00"
+    }
+  ],
+  "dispositionUpdate": null,
+  "clientNotes": "Resuming after signal drop; ridge photo already sent."
+}

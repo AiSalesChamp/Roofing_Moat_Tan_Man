@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# RE Acquisition Ops — one entrypoint for local private CRM.
+#
+# Usage:
+#   ./bin/re-ops init                 # secrets + privacy defaults
+#   ./bin/re-ops up                   # Postgres/Redis + sidecars + CRM
+#   ./bin/re-ops configure <API_KEY>  # publish app, seed, import n8n, pull models
+#   ./bin/re-ops status               # health summary
+#   ./bin/re-ops verify               # smoke checks
+#   ./bin/re-ops down                 # stop sidecars + CRM
+#   ./bin/re-ops login-help           # how to sign in safely
+
+set -euo pipefail
+
+OPS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck disable=SC1091
+source "$OPS_ROOT/scripts/lib.sh"
+
+usage() {
+  sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+cmd="${1:-}"
+shift || true
+
+case "$cmd" in
+  init)
+    "$OPS_ROOT/scripts/init.sh" "$@"
+    ;;
+  up)
+    "$OPS_ROOT/scripts/up.sh" "$@"
+    ;;
+  configure)
+    "$OPS_ROOT/scripts/configure.sh" "$@"
+    ;;
+  status)
+    "$OPS_ROOT/scripts/status.sh" "$@"
+    ;;
+  verify)
+    "$OPS_ROOT/scripts/verify.sh" "$@"
+    ;;
+  down)
+    "$OPS_ROOT/scripts/down.sh" "$@"
+    ;;
+  login-help|help-login)
+    "$OPS_ROOT/scripts/login-help.sh" "$@"
+    ;;
+  pull-models)
+    "$OPS_ROOT/scripts/pull-models.sh" "$@"
+    ;;
+  import-n8n)
+    "$OPS_ROOT/scripts/import-n8n.sh" "$@"
+    ;;
+  publish)
+    "$OPS_ROOT/scripts/publish-app.sh" "$@"
+    ;;
+  -h|--help|help|'')
+    usage
+    ;;
+  *)
+    err "Unknown command: $cmd"
+    usage
+    exit 1
+    ;;
+esac

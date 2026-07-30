@@ -1,0 +1,183 @@
+{
+  "name": "RE - Contract Generation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "re-contract/generate",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "2a2a2a2a-0001-4000-8000-000000000001",
+      "name": "Webhook: Generate Contract",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [180, 400],
+      "webhookId": "re-contract-generate"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "3a3a3a3a-0001-4000-8000-000000000001",
+              "leftValue": "={{$headers['x-webhook-secret']}}",
+              "rightValue": "={{$env.N8N_CONTRACT_WEBHOOK_SECRET}}",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "2a2a2a2a-0002-4000-8000-000000000002",
+      "name": "Verify Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [400, 400]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.TWENTY_API_URL}}/rest/opportunities/{{$json.body.opportunityId}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "qs": { "parameters": [{ "name": "depth", "value": "2" }] } }
+      },
+      "id": "2a2a2a2a-0003-4000-8000-000000000003",
+      "name": "Get Opportunity",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 300],
+      "notes": "Create an HTTP Header Auth credential with header 'Authorization: Bearer <TWENTY_API_KEY>'."
+    },
+    {
+      "parameters": {
+        "jsCode": "const opp = $input.first().json.data?.opportunity ?? $input.first().json;\nconst dealType = Array.isArray(opp.dealType) ? opp.dealType : [];\nconst contractType = $('Webhook: Generate Contract').first().json.body.contractType\n  || opp.contractType\n  || (dealType.includes('WHOLESALE') ? 'ASSIGNMENT' : 'PSA');\n\nconst templateFile = {\n  LOI: 'loi.html',\n  PSA: 'purchase-sale-agreement.html',\n  ASSIGNMENT: 'assignment-contract.html',\n}[contractType] ?? 'purchase-sale-agreement.html';\n\nreturn [{\n  json: {\n    opportunityId: opp.id,\n    contractType,\n    templateFile,\n    propertyAddress: opp.propertyAddress,\n    contractPrice: opp.contractPrice,\n    offerPrice: opp.offerPrice,\n  },\n}];\n"
+      },
+      "id": "2a2a2a2a-0004-4000-8000-000000000004",
+      "name": "Resolve Contract Type",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [840, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.GOTENBERG_URL}}/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            { "parameterType": "formBinaryData", "name": "files", "inputDataFieldName": "rendered_html" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2a2a2a2a-0005-4000-8000-000000000005",
+      "name": "Gotenberg: Render PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1060, 300],
+      "notes": "Point at http://localhost:3002 locally (see re-acquisition/contracts/docker-compose.yml). Insert a node before this one to load templates/{{templateFile}} and replace {{placeholders}}, writing the result to binary field 'rendered_html'."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.TWENTY_API_URL}}/rest/attachments",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            { "parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data" },
+            { "name": "name", "value": "={{$('Resolve Contract Type').item.json.contractType}}-contract.pdf" },
+            { "name": "targetOpportunityId", "value": "={{$('Resolve Contract Type').item.json.opportunityId}}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2a2a2a2a-0006-4000-8000-000000000006",
+      "name": "Attach PDF to Deal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1280, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{$env.TWENTY_API_URL}}/rest/opportunities/{{$('Resolve Contract Type').item.json.opportunityId}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"signatureStatus\": \"GENERATED\", \"contractType\": $('Resolve Contract Type').item.json.contractType } }}",
+        "options": {}
+      },
+      "id": "2a2a2a2a-0007-4000-8000-000000000007",
+      "name": "Update Deal: Generated",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1500, 300],
+      "notes": "Wire a follow-up 'Execute Workflow' node here to send the PDF to DocuSeal for e-signature (see docuseal-esign-flow.md)."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"opportunityId\": $('Resolve Contract Type').item.json.opportunityId, \"contractType\": $('Resolve Contract Type').item.json.contractType, \"signatureStatus\": \"GENERATED\" } }}",
+        "options": {}
+      },
+      "id": "2a2a2a2a-0008-4000-8000-000000000008",
+      "name": "Respond: Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1720, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 401,
+        "responseBody": "={{ { \"error\": \"invalid webhook secret\" } }}",
+        "options": {}
+      },
+      "id": "2a2a2a2a-0009-4000-8000-000000000009",
+      "name": "Respond: Unauthorized",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [620, 520]
+    }
+  ],
+  "connections": {
+    "Webhook: Generate Contract": {
+      "main": [[{ "node": "Verify Secret", "type": "main", "index": 0 }]]
+    },
+    "Verify Secret": {
+      "main": [
+        [{ "node": "Get Opportunity", "type": "main", "index": 0 }],
+        [{ "node": "Respond: Unauthorized", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get Opportunity": {
+      "main": [[{ "node": "Resolve Contract Type", "type": "main", "index": 0 }]]
+    },
+    "Resolve Contract Type": {
+      "main": [[{ "node": "Gotenberg: Render PDF", "type": "main", "index": 0 }]]
+    },
+    "Gotenberg: Render PDF": {
+      "main": [[{ "node": "Attach PDF to Deal", "type": "main", "index": 0 }]]
+    },
+    "Attach PDF to Deal": {
+      "main": [[{ "node": "Update Deal: Generated", "type": "main", "index": 0 }]]
+    },
+    "Update Deal: Generated": {
+      "main": [[{ "node": "Respond: Success", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Simplified implementation of contract-generation-flow.md. Configure an HTTP Header Auth credential (Authorization: Bearer <TWENTY_API_KEY>), set TWENTY_API_URL/GOTENBERG_URL/N8N_CONTRACT_WEBHOOK_SECRET as n8n environment variables, and add an HTML-templating node before 'Gotenberg: Render PDF' using the placeholder table in re-acquisition/contracts/templates/README.md."
+  }
+}

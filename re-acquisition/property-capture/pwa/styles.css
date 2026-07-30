@@ -1,0 +1,199 @@
+/* RE Property Capture — field-first PWA v0 */
+
+:root {
+  --bg: #0f1419;
+  --surface: #1a2332;
+  --border: #2a3548;
+  --text: #e8edf4;
+  --muted: #8b9cb3;
+  --accent: #1a6b4a;
+  --accent-hover: #228f62;
+  --danger: #c44;
+  --warn: #c90;
+  --ok: #2a8;
+  --radius: 8px;
+  --font: system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  line-height: 1.4;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+header h1 { font-size: 1rem; font-weight: 600; }
+
+nav.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+nav.tabs button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+nav.tabs button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.screen { display: none; padding: 16px; }
+.screen.active { display: block; }
+
+label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+button.btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+button.primary { background: var(--accent); color: #fff; }
+button.primary:hover { background: var(--accent-hover); }
+button.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+button.danger { background: var(--danger); color: #fff; }
+button.record { background: #8b2020; color: #fff; }
+button.record.recording { background: #e33; animation: pulse 1s infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.status-bar {
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+.status-bar.online { background: #1a3a2a; color: var(--ok); }
+.status-bar.offline { background: #3a2a1a; color: var(--warn); }
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.photo-thumb {
+  aspect-ratio: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+}
+
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.photo-thumb button.remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+}
+
+.queue-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.queue-item .addr { font-weight: 600; margin-bottom: 4px; }
+.queue-item .meta { font-size: 0.8rem; color: var(--muted); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge.PENDING { background: #334; color: var(--muted); }
+.badge.UPLOADING_MEDIA { background: #345; color: #8cf; }
+.badge.SUBMITTING { background: #453; color: var(--warn); }
+.badge.DONE { background: #243; color: var(--ok); }
+.badge.FAILED { background: #422; color: var(--danger); }
+
+.gps-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.gps-row button { flex: 0 0 auto; width: auto; padding: 12px 16px; margin: 0; }
+
+.hidden { display: none !important; }
+
+#camera-input { display: none; }
+
+.voice-status {
+  text-align: center;
+  padding: 16px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}

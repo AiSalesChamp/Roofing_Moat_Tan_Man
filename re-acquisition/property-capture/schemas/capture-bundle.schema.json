@@ -1,0 +1,267 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://re-acquisition.crm/schemas/capture-bundle-2.0.json",
+  "title": "CaptureBundle",
+  "description": "Device-agnostic property capture envelope for RE acquisition CRM. Records voice memo + property photos against a deal/parcel. Primary match key: property address (APN secondary). workspaceId/ownerId are server-derived.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["captureId", "repId", "capturedAt", "timezone", "deviceType", "appVersion", "target", "audio"],
+  "properties": {
+    "captureId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Client-generated UUID (v4/v7). THE idempotency key: maps to Note.id and seeds deterministic Attachment ids. The server records (workspaceId, captureId) in an atomic claim row BEFORE any Twenty write, so a parallel or replayed bundle with the same captureId is serialized and upserts, never duplicates."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "default": "2.0",
+      "description": "Contract version so server can evolve the shape."
+    },
+    "repId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "workspaceMemberId of the capturing rep (display/cross-check ONLY). Authoritative owner is server-derived from the verified JWT. A repId that disagrees with the token is IGNORED for ownership and LOGGED as a possible spoof signal - the bundle is NOT rejected solely on this mismatch."
+    },
+    "capturedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Client wall-clock at capture, ISO-8601 WITH offset (e.g. 2026-06-09T14:32:00-05:00). Server stores receivedAt independently and NEVER overwrites capturedAt."
+    },
+    "timezone": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "IANA tz id (e.g. America/Chicago). Kept separate from the offset for DST-correct display."
+    },
+    "deviceClockUncertaintyMs": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Known clock drift bound for the offline device, if measurable. Nullable."
+    },
+    "clientSeq": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Per-device monotonic Lamport sequence for intra-device ordering. Nullable on first/legacy clients."
+    },
+    "deviceType": {
+      "type": "string",
+      "enum": ["PHONE", "REALWEAR", "VUZIX", "META_GLASSES"],
+      "description": "The ONLY field that changes per capture device. Keeps the contract glasses-ready with zero other changes."
+    },
+    "deviceModel": {
+      "type": ["string", "null"],
+      "maxLength": 128,
+      "description": "e.g. iPhone 15 Pro, RealWear Navigator 520. Nullable."
+    },
+    "appVersion": {
+      "type": "string",
+      "maxLength": 32,
+      "description": "Semver of the capture app."
+    },
+    "osVersion": {
+      "type": ["string", "null"],
+      "maxLength": 64,
+      "description": "Device OS version. Nullable."
+    },
+    "networkType": {
+      "type": ["string", "null"],
+      "enum": ["WIFI", "CELLULAR", "OFFLINE", null],
+      "description": "Network at submit time. Nullable."
+    },
+    "batteryLow": {
+      "type": ["boolean", "null"],
+      "description": "true if <20% at capture - signals possible truncated media; server cross-checks media sha256 on such captures. Nullable."
+    },
+    "locale": {
+      "type": ["string", "null"],
+      "maxLength": 35,
+      "description": "BCP-47 (e.g. en-US). Nullable."
+    },
+    "geo": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "description": "Device-level GPS fix fallback (per-photo EXIF is separate). SENSITIVE PII (homeowner location): subject to retention TTL + erasure path. Nullable when location denied / glasses have no GPS.",
+      "required": ["lat", "lng"],
+      "properties": {
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lng": { "type": "number", "minimum": -180, "maximum": 180 },
+        "accuracyM": { "type": ["number", "null"], "minimum": 0 },
+        "altitudeM": { "type": ["number", "null"] },
+        "capturedAt": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "captureOrigin": {
+      "type": ["string", "null"],
+      "enum": ["DRIVE_BY", "SITE_WALK", "PHOTO_LOG", "VOICE_MEMO", null],
+      "description": "Capture type. DRIVE_BY/SITE_WALK select inspection type downstream. Nullable."
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Record resolution input. Either an explicit id (rep had a lead open) OR matchHints (door-knock, no lead yet). Server verifies any explicit id (a) exists, (b) is in the caller workspace, and (c) the caller has record-level UPDATE permission on it - else 404 (cross-workspace/absent) or 403 FORBIDDEN_RECORD (in-workspace but not authorized). matchConfidence/matchedRecordId are computed SERVER-SIDE and never accepted here.",
+      "properties": {
+        "propertyId": {
+          "type": ["string", "null"],
+          "format": "uuid",
+          "description": "Explicit Property id (wins if present, after authorization). Nullable."
+        },
+        "opportunityId": {
+          "type": ["string", "null"],
+          "format": "uuid",
+          "description": "Explicit Opportunity id (wins if present, after workspace + record-level authorization). Nullable."
+        },
+        "personId": {
+          "type": ["string", "null"],
+          "format": "uuid",
+          "description": "Explicit Person id. Nullable."
+        },
+        "matchHints": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "description": "Door-knock fallback matching signals when no explicit id. All strings length-capped to bound matcher cost and abuse. Nullable.",
+          "properties": {
+            "name": {
+              "type": ["object", "null"],
+              "additionalProperties": false,
+              "properties": {
+                "firstName": { "type": ["string", "null"], "maxLength": 100 },
+                "lastName": { "type": ["string", "null"], "maxLength": 100 }
+              }
+            },
+            "address": {
+              "type": ["object", "null"],
+              "additionalProperties": false,
+              "properties": {
+                "street1": { "type": ["string", "null"], "maxLength": 200 },
+                "street2": { "type": ["string", "null"], "maxLength": 200 },
+                "city": { "type": ["string", "null"], "maxLength": 100 },
+                "state": { "type": ["string", "null"], "maxLength": 50 },
+                "zip": { "type": ["string", "null"], "maxLength": 20 }
+              }
+            },
+            "phoneE164": {
+              "type": ["string", "null"],
+              "pattern": "^\\+[1-9][0-9]{6,14}$",
+              "description": "E.164 phone. Nullable."
+            }
+          }
+        }
+      }
+    },
+    "audio": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Exactly one voice memo per capture. References phase-1 fileId OR a pendingMediaId not yet uploaded. Exactly one of fileId/pendingMediaId must be non-null (enforced by oneOf below). sha256 is REQUIRED - it is the truncation/integrity guard verified server-side against the stored blob.",
+      "required": ["codec", "container", "durationSec", "audioChannel", "language", "sha256"],
+      "properties": {
+        "fileId": {
+          "type": ["string", "null"],
+          "format": "uuid",
+          "description": "Server fileId (v4 UUID) returned by phase-1 uploadFilesFieldFile. Null until uploaded; never client-synthesized. pendingMediaId then required."
+        },
+        "pendingMediaId": {
+          "type": ["string", "null"],
+          "format": "uuid",
+          "description": "Client UUID for an as-yet-unuploaded audio object; becomes the per-media idempotency key on pre-upload. Exactly one of fileId/pendingMediaId must be non-null."
+        },
+        "filename": {
+          "type": ["string", "null"],
+          "pattern": "^.+\\.(m4a|wav)$",
+          "description": "Must end .m4a or .wav - drives server ext/MIME detection. Nullable only when fileId already resolved upstream."
+        },
+        "codec": { "type": "string", "enum": ["aac", "pcm"] },
+        "container": { "type": "string", "enum": ["m4a", "wav"] },
+        "sampleRateHz": { "type": ["integer", "null"], "minimum": 8000, "maximum": 48000, "description": "16000 recommended for voice STT. Server may 422 if > 24000 for a voice memo (oversize guardrail). Nullable." },
+        "durationSec": { "type": "number", "minimum": 0, "maximum": 1800, "description": "Hard cap 30 min. Server may reject longer as UNPROCESSABLE." },
+        "audioChannel": {
+          "type": "string",
+          "enum": ["MONO", "STEREO"],
+          "description": "Maps to downstream documentMeta.audioChannel; can't be cheaply re-derived server-side. Recommend MONO for voice."
+        },
+        "channelCount": { "type": ["integer", "null"], "enum": [1, 2, null] },
+        "bitrateKbps": { "type": ["integer", "null"], "minimum": 0, "maximum": 320, "description": "Server may 422 if > 64 for a voice memo (cellular oversize guardrail). Nullable." },
+        "language": { "type": "string", "maxLength": 35, "description": "BCP-47 STT hint (e.g. en-US, es-US)." },
+        "sizeBytes": { "type": ["integer", "null"], "minimum": 0, "maximum": 10485760, "description": "<= server maxFileSize (10MB default). Cellular soft-cap ~2-3MB recommended. Nullable." },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$", "description": "REQUIRED. Lowercase hex SHA-256 of the full audio bytes. Server verifies the stored blob hash matches; mismatch -> reject (truncation/swapped-bytes guard)." },
+        "caption": { "type": ["string", "null"], "maxLength": 500 }
+      },
+      "oneOf": [
+        { "required": ["fileId"], "properties": { "fileId": { "type": "string" }, "pendingMediaId": { "type": "null" } } },
+        { "required": ["pendingMediaId"], "properties": { "pendingMediaId": { "type": "string" }, "fileId": { "type": "null" } } }
+      ]
+    },
+    "photos": {
+      "type": "array",
+      "maxItems": 50,
+          "description": "Property photos. Max 50 items.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["mimeType"],
+        "properties": {
+          "fileId": { "type": ["string", "null"], "format": "uuid", "description": "Server fileId (v4 UUID) from phase-1. Null until uploaded; never client-synthesized." },
+          "pendingMediaId": { "type": ["string", "null"], "format": "uuid", "description": "Client UUID for unuploaded photo (per-media idempotency key). Exactly one of fileId/pendingMediaId non-null." },
+          "filename": { "type": ["string", "null"], "pattern": "^.+\\.(jpg|jpeg|png|webp|heic)$", "description": "Drives ext/MIME detection. Nullable when fileId resolved." },
+          "mimeType": { "type": "string", "enum": ["image/jpeg", "image/png", "image/webp", "image/heic"], "description": "Declared MIME; server re-sniffs magic bytes, asserts sniffed value is in THIS exact narrow enum (image/svg+xml explicitly excluded), transcodes/strips trailing bytes to defeat polyglots, and stores the SNIFFED value." },
+          "sequenceIndex": { "type": ["integer", "null"], "minimum": 0, "description": "Photo 1..N ordering; seeds deterministic Attachment id uuidv5(captureId,'photo:'+sequenceIndex). Nullable." },
+          "widthPx": { "type": ["integer", "null"], "minimum": 0 },
+          "heightPx": { "type": ["integer", "null"], "minimum": 0 },
+          "sizeBytes": { "type": ["integer", "null"], "minimum": 0, "maximum": 10485760 },
+          "compressionQuality": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+          "sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$", "description": "Lowercase hex SHA-256 of full bytes. Strongly recommended; server verifies when present." },
+          "caption": { "type": ["string", "null"], "maxLength": 500, "description": "e.g. north slope, hail strike closeup. Becomes Attachment file[0].label (Attachment.name is deprecated)." },
+          "tags": { "type": ["array", "null"], "maxItems": 20, "items": { "type": "string", "enum": ["front", "rear", "street-view", "interior", "roof", "lot-overview", "signage", "loading-dock", "environmental", "access-road", "survey-marker"] }, "description": "Controlled vocab for RE property photos. Nullable." },
+          "exif": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "description": "EXIF-derived metadata. GPS is SENSITIVE PII (homeowner house): server may strip on ingest per workspace policy. GPS often absent - nullable; geo fallback is at bundle level.",
+            "properties": {
+              "gps": {
+                "type": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+                  "lng": { "type": "number", "minimum": -180, "maximum": 180 },
+                  "altitudeM": { "type": ["number", "null"] },
+                  "accuracyM": { "type": ["number", "null"], "minimum": 0 }
+                },
+                "required": ["lat", "lng"]
+              },
+              "orientation": { "type": ["integer", "null"], "minimum": 1, "maximum": 8, "description": "EXIF orientation 1..8." },
+              "timestamp": { "type": ["string", "null"], "format": "date-time" }
+            }
+          },
+          "capturedAt": { "type": ["string", "null"], "format": "date-time" }
+        },
+        "oneOf": [
+          { "required": ["fileId"], "properties": { "fileId": { "type": "string" }, "pendingMediaId": { "type": "null" } } },
+          { "required": ["pendingMediaId"], "properties": { "pendingMediaId": { "type": "string" }, "fileId": { "type": "null" } } }
+        ]
+      }
+    },
+    "dispositionUpdate": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "description": "Optional Opportunity stage advance. Server parks (202) until the capture's Note exists (causality: capture lands before disposition). Applied AT MOST ONCE per captureId (dispositionApplied flag on the idempotency row) and guarded by If-Match so a human who moved the stage is not silently overwritten. Nullable.",
+      "required": ["dealStage"],
+      "properties": {
+        "dealStage": {
+          "type": "string",
+          "enum": ["SOURCED", "QUALIFYING", "OFFER_OUT", "UNDER_CONTRACT", "DUE_DILIGENCE", "ACQUIRED", "DISPOSITION", "EXIT_CLOSED", "DEAD"],
+          "description": "Twenty Opportunity.dealStage SELECT options (RE Acquisition app)."
+        },
+        "dependsOn": {
+          "type": ["array", "null"],
+          "maxItems": 50,
+          "items": { "type": "string", "format": "uuid" },
+          "description": "captureIds that must be DONE first. Nullable; defaults to [this.captureId]."
+        }
+      }
+    },
+    "clientNotes": {
+      "type": ["string", "null"],
+      "maxLength": 4000,
+      "description": "Optional rep free-text appended to the Note placeholder body before the voice pipeline fills structured fields. Nullable."
+    }
+  }
+}

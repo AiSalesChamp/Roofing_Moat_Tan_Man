@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RE Acquisition CRM — UI Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f7f7f8;
+      --surface: #ffffff;
+      --sidebar: #14151a;
+      --sidebar-hover: #1f2128;
+      --sidebar-text: #b4b8c5;
+      --sidebar-active: #ffffff;
+      --border: #e4e4e7;
+      --text: #18181b;
+      --muted: #71717a;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04);
+      --radius: 10px;
+      --stage-sourced: #71717a;
+      --stage-qualifying: #9333ea;
+      --stage-offer: #0ea5e9;
+      --stage-contract: #14b8a6;
+      --stage-dd: #2563eb;
+      --stage-acquired: #16a34a;
+      --stage-disposition: #ca8a04;
+      --stage-exit: #7c3aed;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      height: 100dvh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--sidebar);
+      color: var(--sidebar-text);
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #2a2d35;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 18px 16px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #2a2d35;
+    }
+
+    .logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 11px;
+      color: white;
+    }
+
+    .sidebar-header h1 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--sidebar-active);
+    }
+
+    .sidebar-header span {
+      font-size: 11px;
+      color: var(--sidebar-text);
+      display: block;
+    }
+
+    .nav-section {
+      padding: 12px 8px 4px;
+    }
+
+    .nav-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #6b7280;
+      padding: 8px 10px 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      margin: 2px 0;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .nav-item:hover { background: var(--sidebar-hover); }
+    .nav-item.active {
+      background: #2563eb22;
+      color: var(--sidebar-active);
+    }
+
+    .nav-icon {
+      width: 18px;
+      text-align: center;
+      opacity: .85;
+      font-size: 14px;
+    }
+
+    /* Main */
+    .main {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .topbar-left h2 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .topbar-left p {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn:hover { background: #fafafa; }
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { background: #1d4ed8; }
+
+    .view-tabs {
+      display: flex;
+      gap: 4px;
+      background: #f4f4f5;
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    .view-tab {
+      padding: 6px 12px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+    }
+
+    .view-tab.active {
+      background: white;
+      color: var(--text);
+      box-shadow: var(--shadow);
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 12px;
+      padding: 16px 24px 0;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      min-width: 140px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-card label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .stat-card strong {
+      display: block;
+      font-size: 20px;
+      margin-top: 4px;
+    }
+
+    .stat-card span {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* Kanban */
+    .board-wrap {
+      flex: 1;
+      overflow: auto;
+      padding: 16px 24px 24px;
+    }
+
+    .board {
+      display: flex;
+      gap: 14px;
+      min-height: 100%;
+      align-items: flex-start;
+    }
+
+    .column {
+      flex: 0 0 280px;
+      background: #f0f0f2;
+      border-radius: 12px;
+      padding: 10px;
+      max-height: calc(100dvh - 220px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .column-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px 10px;
+    }
+
+    .column-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .column-count {
+      font-size: 11px;
+      color: var(--muted);
+      background: white;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .column-sum {
+      font-size: 11px;
+      color: var(--muted);
+      padding: 0 8px 8px;
+    }
+
+    .cards {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .deal-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: var(--shadow);
+      cursor: grab;
+      transition: transform .12s, box-shadow .12s;
+    }
+
+    .deal-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0,0,0,.08);
+    }
+
+    .deal-card h3 {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+
+    .deal-address {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    .tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 7px;
+      border-radius: 5px;
+      letter-spacing: .02em;
+    }
+
+    .tag-wholesale { background: #dbeafe; color: #1d4ed8; }
+    .tag-flip { background: #dcfce7; color: #15803d; }
+    .tag-land { background: #ccfbf1; color: #0f766e; }
+    .tag-commercial { background: #ede9fe; color: #6d28d9; }
+    .tag-industrial { background: #ffedd5; color: #c2410c; }
+
+    .deal-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .deal-price {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .deal-profit {
+      color: #16a34a;
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    .avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #e4e4e7;
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 600;
+      color: #52525b;
+    }
+
+    .banner {
+      margin: 0 24px;
+      padding: 10px 14px;
+      background: var(--accent-soft);
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #1e40af;
+    }
+
+    .banner code {
+      background: white;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    /* Table view (hidden by default) */
+    .table-view {
+      display: none;
+      padding: 16px 24px 24px;
+      overflow: auto;
+      flex: 1;
+    }
+
+    .table-view.visible { display: block; }
+    .board-wrap.hidden { display: none; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: #fafafa;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .stage-pill {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: white;
+    }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .column { flex: 0 0 260px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">RE</div>
+        <div>
+          <h1>Twenty CRM</h1>
+          <span>RE Acquisition</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Acquisition</div>
+        <div class="nav-item active"><span class="nav-icon">▦</span> Pipeline</div>
+        <div class="nav-item"><span class="nav-icon">◎</span> All Deals</div>
+        <div class="nav-item"><span class="nav-icon">▣</span> Properties</div>
+        <div class="nav-item"><span class="nav-icon">✓</span> Inspections</div>
+        <div class="nav-item"><span class="nav-icon">⇄</span> Wholesale Queue</div>
+        <div class="nav-item"><span class="nav-icon">⚒</span> Flip Active</div>
+        <div class="nav-item"><span class="nav-icon">🌲</span> Land Deals</div>
+        <div class="nav-item"><span class="nav-icon">🏭</span> Commercial / Industrial</div>
+        <div class="nav-item"><span class="nav-icon">📅</span> DD Calendar</div>
+        <div class="nav-item"><span class="nav-icon">☠</span> Dead Deals</div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Contacts</div>
+        <div class="nav-item"><span class="nav-icon">👤</span> Sellers</div>
+        <div class="nav-item"><span class="nav-icon">👥</span> Buyers List</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h2>Acquisition Pipeline</h2>
+          <p>Kanban by deal stage · sum of contract price per column</p>
+        </div>
+        <div class="topbar-actions">
+          <div class="view-tabs">
+            <button class="view-tab active" data-view="kanban">Kanban</button>
+            <button class="view-tab" data-view="table">Table</button>
+          </div>
+          <button class="btn">Filter</button>
+          <button class="btn btn-primary">+ New Deal</button>
+        </div>
+      </header>
+
+      <div class="banner">
+        Static UI preview — open live CRM with <code>yarn start</code> then publish <code>packages/twenty-apps/re-acquisition</code>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <label>Active deals</label>
+          <strong>12</strong>
+          <span>excl. dead</span>
+        </div>
+        <div class="stat-card">
+          <label>Under contract</label>
+          <strong>$4.2M</strong>
+          <span>3 deals</span>
+        </div>
+        <div class="stat-card">
+          <label>Projected profit</label>
+          <strong>$680K</strong>
+          <span>pipeline total</span>
+        </div>
+        <div class="stat-card">
+          <label>DD this week</label>
+          <strong>2</strong>
+          <span>deadlines</span>
+        </div>
+      </div>
+
+      <div class="board-wrap" id="board">
+        <div class="board" id="kanban"></div>
+      </div>
+
+      <div class="table-view" id="tableView">
+        <table>
+          <thead>
+            <tr>
+              <th>Deal</th>
+              <th>Stage</th>
+              <th>Type</th>
+              <th>Property</th>
+              <th>Contract</th>
+              <th>Profit</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const STAGES = [
+      { id: 'SOURCED', label: 'Sourced', color: 'var(--stage-sourced)' },
+      { id: 'QUALIFYING', label: 'Qualifying', color: 'var(--stage-qualifying)' },
+      { id: 'OFFER_OUT', label: 'Offer Out', color: 'var(--stage-offer)' },
+      { id: 'UNDER_CONTRACT', label: 'Under Contract', color: 'var(--stage-contract)' },
+      { id: 'DUE_DILIGENCE', label: 'Due Diligence', color: 'var(--stage-dd)' },
+      { id: 'ACQUIRED', label: 'Acquired', color: 'var(--stage-acquired)' },
+      { id: 'DISPOSITION', label: 'Disposition', color: 'var(--stage-disposition)' },
+      { id: 'EXIT_CLOSED', label: 'Exit Closed', color: 'var(--stage-exit)' },
+    ];
+
+    const DEALS = [
+      { name: 'Phoenix 5.2ac Land — Wholesale', address: '4820 N Cave Creek Rd, Phoenix AZ', types: ['WHOLESALE','LAND'], stage: 'DISPOSITION', price: 185000, profit: 45000, owner: 'DT' },
+      { name: 'Dallas Commercial — Flip', address: '1200 Industrial Blvd, Dallas TX', types: ['FLIP','COMMERCIAL'], stage: 'ACQUIRED', price: 1200000, profit: 200000, owner: 'DT' },
+      { name: 'Atlanta Industrial — DD', address: '890 Logistics Way, Atlanta GA', types: ['COMMERCIAL','INDUSTRIAL'], stage: 'DUE_DILIGENCE', price: 2800000, profit: null, owner: 'MK' },
+      { name: 'New Sourced — Cave Creek', address: '4820 N Cave Creek Rd, Phoenix AZ', types: ['LAND'], stage: 'SOURCED', price: null, profit: null, owner: 'DT' },
+      { name: 'Dallas LOI Submitted', address: '1200 Industrial Blvd, Dallas TX', types: ['FLIP','COMMERCIAL'], stage: 'OFFER_OUT', price: 1150000, profit: null, owner: 'MK' },
+      { name: 'Mesa Land — Qualifying', address: '2100 E Main St, Mesa AZ', types: ['LAND','WHOLESALE'], stage: 'QUALIFYING', price: null, profit: null, owner: 'DT' },
+      { name: 'Fort Worth Warehouse', address: '500 Commerce St, Fort Worth TX', types: ['INDUSTRIAL'], stage: 'UNDER_CONTRACT', price: 950000, profit: 120000, owner: 'MK' },
+      { name: 'Scottsdale Infill Lot', address: '8800 E Camelback, Scottsdale AZ', types: ['LAND','FLIP'], stage: 'QUALIFYING', price: null, profit: null, owner: 'DT' },
+      { name: 'Houston Strip Center', address: '4400 Westheimer, Houston TX', types: ['COMMERCIAL'], stage: 'EXIT_CLOSED', price: 2100000, profit: 310000, owner: 'MK' },
+    ];
+
+    const fmt = (n) => n == null ? '—' : '$' + n.toLocaleString();
+    const tagClass = (t) => ({ WHOLESALE:'tag-wholesale', FLIP:'tag-flip', LAND:'tag-land', COMMERCIAL:'tag-commercial', INDUSTRIAL:'tag-industrial' }[t] || '');
+
+    function renderKanban() {
+      const board = document.getElementById('kanban');
+      board.innerHTML = STAGES.map(stage => {
+        const deals = DEALS.filter(d => d.stage === stage.id);
+        const sum = deals.reduce((a, d) => a + (d.price || 0), 0);
+        return `
+          <section class="column">
+            <div class="column-header">
+              <div class="column-title">
+                <span class="dot" style="background:${stage.color}"></span>
+                ${stage.label}
+              </div>
+              <span class="column-count">${deals.length}</span>
+            </div>
+            <div class="column-sum">${sum ? fmt(sum) + ' total' : '&nbsp;'}</div>
+            <div class="cards">
+              ${deals.map(d => `
+                <article class="deal-card">
+                  <h3>${d.name}</h3>
+                  <div class="deal-address">📍 ${d.address}</div>
+                  <div class="tags">${d.types.map(t => `<span class="tag ${tagClass(t)}">${t}</span>`).join('')}</div>
+                  <div class="deal-meta">
+                    <div>
+                      <div class="deal-price">${fmt(d.price)}</div>
+                      ${d.profit ? `<div class="deal-profit">+${fmt(d.profit)} proj.</div>` : ''}
+                    </div>
+                    <div class="avatar" title="Owner">${d.owner}</div>
+                  </div>
+                </article>
+              `).join('') || '<p style="font-size:12px;color:#71717a;padding:8px">No deals</p>'}
+            </div>
+          </section>`;
+      }).join('');
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      const stageColors = Object.fromEntries(STAGES.map(s => [s.id, s.color]));
+      tbody.innerHTML = DEALS.map(d => `
+        <tr>
+          <td><strong>${d.name}</strong></td>
+          <td><span class="stage-pill" style="background:${stageColors[d.stage]}">${d.stage.replace(/_/g,' ')}</span></td>
+          <td>${d.types.map(t => `<span class="tag ${tagClass(t)}">${t}</span>`).join(' ')}</td>
+          <td style="color:#71717a;font-size:12px">${d.address}</td>
+          <td>${fmt(d.price)}</td>
+          <td style="color:#16a34a;font-weight:600">${d.profit ? fmt(d.profit) : '—'}</td>
+        </tr>
+      `).join('');
+    }
+
+    document.querySelectorAll('.view-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const isTable = tab.dataset.view === 'table';
+        document.getElementById('board').classList.toggle('hidden', isTable);
+        document.getElementById('tableView').classList.toggle('visible', isTable);
+      });
+    });
+
+    renderKanban();
+    renderTable();
+  </script>
+</body>
+</html>

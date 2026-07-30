@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Assignment Contract — {{propertyAddress}}</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; font-size: 11pt; margin: 1in; line-height: 1.45; }
+    h1 { font-size: 15pt; text-align: center; margin-bottom: 20pt; }
+    h2 { font-size: 12pt; margin-top: 18pt; }
+    .field { border-bottom: 1px solid #000; display: inline-block; min-width: 180px; }
+    .signature-block { margin-top: 36pt; page-break-inside: avoid; }
+    .signature-line { border-top: 1px solid #000; width: 280px; margin-top: 40pt; }
+  </style>
+</head>
+<body>
+  <h1>ASSIGNMENT OF REAL ESTATE PURCHASE CONTRACT</h1>
+
+  <p><strong>Assignment Date:</strong> <span class="field">{{contractDate}}</span></p>
+
+  <h2>1. ASSIGNOR AND ASSIGNEE</h2>
+  <p>
+    Assignor: <span class="field">{{buyerEntityName}}</span> ("Assignor")<br />
+    Assignee: <span class="field">{{assigneeName}}</span> ("Assignee")
+  </p>
+
+  <h2>2. UNDERLYING CONTRACT</h2>
+  <p>
+    Assignor hereby assigns all right, title, and interest in the Purchase and Sale
+    Agreement dated <span class="field">{{contractDate}}</span> for the property located at:
+  </p>
+  <p>
+    <span class="field">{{propertyAddress}}</span><br />
+    APN: <span class="field">{{apn}}</span> — County: <span class="field">{{county}}</span>
+  </p>
+
+  <h2>3. ASSIGNMENT FEE</h2>
+  <p>
+    In consideration of this assignment, Assignee shall pay Assignor an assignment fee of
+    <strong>${{assignmentFee}}</strong> at closing. Total contract price to Seller:
+    <strong>${{contractPrice}}</strong>.
+  </p>
+
+  <h2>4. ASSUMPTION OF OBLIGATIONS</h2>
+  <p>
+    Assignee assumes all obligations of Buyer under the underlying contract, including
+    earnest money of <strong>${{earnestMoney}}</strong> and due diligence deadline of
+    <span class="field">{{ddDeadline}}</span>. Closing date:
+    <span class="field">{{closingDate}}</span>.
+  </p>
+
+  <h2>5. SELLER ACKNOWLEDGMENT</h2>
+  <p>
+    Seller <span class="field">{{sellerName}}</span> acknowledges this assignment and
+    agrees to convey title to Assignee at closing, subject to the terms of the
+    underlying contract.
+  </p>
+
+  <div class="signature-block">
+    <p><strong>ASSIGNOR:</strong> {{buyerEntityName}}</p>
+    <div class="signature-line"></div>
+    <p>Date: _______________</p>
+  </div>
+
+  <div class="signature-block">
+    <p><strong>ASSIGNEE:</strong> {{assigneeName}}</p>
+    <div class="signature-line"></div>
+    <p>Date: _______________</p>
+  </div>
+
+  <div class="signature-block">
+    <p><strong>SELLER (acknowledgment):</strong> {{sellerName}}</p>
+    <div class="signature-line"></div>
+    <p>Date: _______________</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Land Funnel — Wholesale Lane / Hold Lane Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f7f7f8;
+      --surface: #ffffff;
+      --border: #e4e4e7;
+      --text: #18181b;
+      --muted: #71717a;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04);
+      --radius: 10px;
+      --lane-wholesale: #2563eb;
+      --lane-hold: #ca8a04;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+    }
+
+    .page-header {
+      max-width: 1400px;
+      margin: 0 auto 16px;
+    }
+
+    .page-header h1 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .page-header p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .banner {
+      max-width: 1400px;
+      margin: 0 auto 16px;
+      padding: 10px 14px;
+      background: var(--accent-soft);
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #1e40af;
+    }
+
+    .banner code {
+      background: white;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .stats-row {
+      max-width: 1400px;
+      margin: 0 auto 20px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      min-width: 170px;
+      box-shadow: var(--shadow);
+      flex: 1;
+    }
+
+    .stat-card label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .stat-card strong {
+      display: block;
+      font-size: 22px;
+      margin-top: 4px;
+    }
+
+    .stat-card span {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .lane {
+      max-width: 1400px;
+      margin: 0 auto 28px;
+    }
+
+    .lane-header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .lane-header h2 {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .lane-header .lane-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .lane-header p {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .board {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+
+    .column {
+      flex: 0 0 240px;
+      background: #f0f0f2;
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .column-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 6px 8px;
+    }
+
+    .column-title {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .column-count {
+      font-size: 11px;
+      color: var(--muted);
+      background: white;
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+
+    .cards {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .deal-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .deal-card h3 {
+      font-size: 12.5px;
+      font-weight: 600;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+
+    .deal-meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+
+    .tag {
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 5px;
+      letter-spacing: .02em;
+    }
+
+    .tag-wholesale-investor { background: #dbeafe; color: #1d4ed8; }
+    .tag-wholetail-buyer { background: #dcfce7; color: #15803d; }
+    .tag-power-load-developer { background: #fef3c7; color: #92400e; }
+
+    .deal-price {
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .deal-fee {
+      color: #16a34a;
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    @media (max-width: 900px) {
+      .column { flex: 0 0 210px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <h1>Land Funnel — Wholesale Lane / Hold Lane</h1>
+    <p>Static preview of the two-lane funnel described in <code>01-funnel-overview.md</code>. Not connected to live data.</p>
+  </div>
+
+  <div class="banner">
+    Static UI preview, no build step — mirrors <code>../ui-preview.html</code>. Live pipeline runs in Twenty via <code>packages/twenty-apps/re-acquisition</code>.
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <label>Reinvestment pool</label>
+      <strong>$142,000</strong>
+      <span>funded by assignment fees</span>
+    </div>
+    <div class="stat-card">
+      <label>Assignment fees (90d)</label>
+      <strong>$96,500</strong>
+      <span>11 wholesale exits</span>
+    </div>
+    <div class="stat-card">
+      <label>Avg. assignment fee</label>
+      <strong>$8,770</strong>
+      <span>trending up</span>
+    </div>
+    <div class="stat-card">
+      <label>Parcels held</label>
+      <strong>2</strong>
+      <span>68 acres total</span>
+    </div>
+    <div class="stat-card">
+      <label>Reinvestment rate</label>
+      <strong>18%</strong>
+      <span>of trailing 90d fees</span>
+    </div>
+  </div>
+
+  <div class="lane" id="wholesaleLane"></div>
+  <div class="lane" id="holdLane"></div>
+
+  <script>
+    const WHOLESALE_STAGES = [
+      { id: 'SOURCED', label: 'Sourced' },
+      { id: 'QUALIFYING', label: 'Qualifying' },
+      { id: 'OFFER_OUT', label: 'Offer Out' },
+      { id: 'UNDER_CONTRACT', label: 'Under Contract' },
+      { id: 'DUE_DILIGENCE', label: 'Due Diligence' },
+      { id: 'DISPOSITION', label: 'Disposition (marketing to buyers)' },
+      { id: 'EXIT_CLOSED', label: 'Exit Closed (fee collected)' },
+    ];
+
+    const HOLD_STAGES = [
+      { id: 'ACQUIRED', label: 'Acquired (closed, held)' },
+      { id: 'DISPOSITION', label: 'Disposition (prep / entitlement)' },
+      { id: 'EXIT_CLOSED', label: 'Exit Closed' },
+    ];
+
+    const WHOLESALE_DEALS = [
+      { name: '5.4ac — Kaufman County', meta: 'Sourced 2 days ago', stage: 'SOURCED' },
+      { name: '8.1ac — Ellis County', meta: 'Motivation: tax delinquent', stage: 'QUALIFYING' },
+      { name: '12ac — Hood County', meta: 'LOI sent, $2,100/ac', stage: 'OFFER_OUT' },
+      { name: '6.7ac — Wise County', meta: 'Signed, closing in 3wk', stage: 'UNDER_CONTRACT' },
+      { name: '9.5ac — Parker County', meta: 'Title + access check', stage: 'DUE_DILIGENCE' },
+      { name: '14ac — Navarro County', meta: 'Shopping to buyers list', stage: 'DISPOSITION', price: 168000, fee: 12500, buyer: 'wholesale-investor' },
+      { name: '7.2ac — Freestone County', meta: 'Assigned, closed', stage: 'EXIT_CLOSED', price: 95000, fee: 7200, buyer: 'wholesale-investor' },
+    ];
+
+    const HOLD_DEALS = [
+      { name: '42ac — Milam County', meta: 'Near 161kV line, closed', stage: 'ACQUIRED', price: 610000, buyer: 'power-load-developer' },
+      { name: '26ac — Falls County', meta: 'Survey + fencing underway', stage: 'DISPOSITION', price: 340000, buyer: 'wholetail-buyer' },
+      { name: '68ac — Limestone County', meta: 'Sold — data center developer', stage: 'EXIT_CLOSED', price: 1450000, fee: 480000, buyer: 'power-load-developer' },
+    ];
+
+    const BUYER_TAG = {
+      'wholesale-investor': { label: 'Wholesale Investor', cls: 'tag-wholesale-investor' },
+      'wholetail-buyer': { label: 'Whole-tail Buyer', cls: 'tag-wholetail-buyer' },
+      'power-load-developer': { label: 'Power/Load Developer', cls: 'tag-power-load-developer' },
+    };
+
+    const fmt = (n) => n == null ? '—' : '$' + n.toLocaleString();
+
+    function renderLane(containerId, title, dotColor, description, stages, deals) {
+      const container = document.getElementById(containerId);
+      const columnsHtml = stages.map(stage => {
+        const stageDeals = deals.filter(d => d.stage === stage.id);
+        return `
+          <div class="column">
+            <div class="column-header">
+              <span class="column-title">${stage.label}</span>
+              <span class="column-count">${stageDeals.length}</span>
+            </div>
+            <div class="cards">
+              ${stageDeals.map(d => `
+                <article class="deal-card">
+                  <h3>${d.name}</h3>
+                  <div class="deal-meta">${d.meta}</div>
+                  ${d.buyer ? `<div class="tags"><span class="tag ${BUYER_TAG[d.buyer].cls}">${BUYER_TAG[d.buyer].label}</span></div>` : ''}
+                  <div class="deal-price">${fmt(d.price)}</div>
+                  ${d.fee ? `<div class="deal-fee">+${fmt(d.fee)} fee/profit</div>` : ''}
+                </article>
+              `).join('') || '<p style="font-size:11px;color:#71717a;padding:6px">No deals</p>'}
+            </div>
+          </div>`;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="lane-header">
+          <span class="lane-dot" style="background:${dotColor}"></span>
+          <h2>${title}</h2>
+          <p>${description}</p>
+        </div>
+        <div class="board">${columnsHtml}</div>`;
+    }
+
+    renderLane(
+      'wholesaleLane',
+      'Wholesale Lane',
+      'var(--lane-wholesale)',
+      'Default path — fast, no capital, paid via assignment fee',
+      WHOLESALE_STAGES,
+      WHOLESALE_DEALS,
+    );
+
+    renderLane(
+      'holdLane',
+      'Hold Lane',
+      'var(--lane-hold)',
+      'Selective — funded by the reinvestment pool, exits to whole-tail or power/load developer buyers',
+      HOLD_STAGES,
+      HOLD_DEALS,
+    );
+  </script>
+</body>
+</html>

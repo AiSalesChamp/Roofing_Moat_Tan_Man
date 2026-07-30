@@ -1,0 +1,62 @@
+#!/usr/bin/env node
+import { readFileSync } from 'node:fs';
+import { extractWithOllama } from './ollama.js';
+import { validateExtraction } from './validate.js';
+import { TwentyWriter } from './twenty-writer.js';
+
+function parseArgs(argv) {
+  const args = {
+    transcript: null,
+    callId: `call-${Date.now()}`,
+    dryRun: false,
+    skipCrm: false,
+    kind: 'seller-call',
+  };
+  for (let i = 2; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--transcript' && argv[i + 1]) args.transcript = argv[++i];
+    else if (a === '--call-id' && argv[i + 1]) args.callId = argv[++i];
+    else if (a === '--dry-run') args.dryRun = true;
+    else if (a === '--skip-crm') args.skipCrm = true;
+    else if (a === '--kind' && argv[i + 1]) args.kind = argv[++i];
+    else if (a === '--help') {
+      console.log(`Usage: node index.js --transcript <file> [--call-id <id>] [--dry-run] [--skip-crm]`);
+      process.exit(0);
+    }
+  }
+  return args;
+}
+
+async function main() {
+  const args = parseArgs(process.argv);
+  if (!args.transcript) {
+    console.error('Error: --transcript <file> is required');
+    process.exit(1);
+  }
+
+  const transcriptBody = readFileSync(args.transcript, 'utf8');
+  console.log(`Extracting from ${args.transcript} (callId=${args.callId})...`);
+
+  const extraction = await extractWithOllama({
+    transcript: transcriptBody,
+    externalCallId: args.callId,
+    kind: args.kind,
+  });
+
+  validateExtraction(extraction, args.kind);
+  console.log('Schema validation passed.');
+
+  if (args.dryRun || args.skipCrm) {
+    console.log(JSON.stringify(extraction, null, 2));
+    if (args.skipCrm) return;
+  }
+
+  const writer = new TwentyWriter({});
+  const result = await writer.writeSellerCallExtraction(extraction, transcriptBody);
+  console.log('Twenty CRM upsert complete:', JSON.stringify(result, null, 2));
+}
+
+main().catch((err) => {
+  console.error(err.message || err);
+  process.exit(1);
+});

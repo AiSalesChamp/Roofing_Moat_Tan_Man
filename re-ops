@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Convenience wrapper from repo root → re-acquisition-ops
+exec "$(cd "$(dirname "$0")" && pwd)/re-acquisition-ops/bin/re-ops" "$@"

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Letter of Intent — {{propertyAddress}}</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; font-size: 12pt; margin: 1in; line-height: 1.5; }
+    h1 { font-size: 16pt; text-align: center; margin-bottom: 24pt; }
+    .field { border-bottom: 1px solid #000; display: inline-block; min-width: 200px; }
+    .signature-block { margin-top: 48pt; }
+    .signature-line { border-top: 1px solid #000; width: 280px; margin-top: 48pt; }
+  </style>
+</head>
+<body>
+  <h1>LETTER OF INTENT</h1>
+
+  <p><strong>Date:</strong> <span class="field">{{offerDate}}</span></p>
+  <p><strong>Property:</strong> <span class="field">{{propertyAddress}}</span></p>
+  <p><strong>APN:</strong> <span class="field">{{apn}}</span></p>
+  <p><strong>County:</strong> <span class="field">{{county}}</span></p>
+
+  <p>
+    This Letter of Intent ("LOI") is submitted by <strong>{{buyerEntityName}}</strong>
+    ("Buyer") to <strong>{{sellerName}}</strong> ("Seller") regarding the property
+    located at the address above.
+  </p>
+
+  <p><strong>Proposed Purchase Price:</strong> ${{offerPrice}}</p>
+  <p><strong>Earnest Money Deposit:</strong> ${{earnestMoney}}</p>
+  <p><strong>Proposed Closing Date:</strong> {{closingDate}}</p>
+  <p><strong>Due Diligence Period:</strong> {{ddDeadline}}</p>
+
+  <p>
+    This LOI is non-binding except for confidentiality and exclusivity provisions.
+    Upon mutual acceptance, the parties agree to execute a formal Purchase and Sale
+    Agreement within ten (10) business days.
+  </p>
+
+  <div class="signature-block">
+    <p><strong>BUYER:</strong> {{buyerEntityName}}</p>
+    <div class="signature-line"></div>
+    <p>Authorized Signatory</p>
+    <p>Date: _______________</p>
+  </div>
+
+  <div class="signature-block">
+    <p><strong>SELLER:</strong> {{sellerName}}</p>
+    <div class="signature-line"></div>
+    <p>Date: _______________</p>
+  </div>
+</body>
+</html>

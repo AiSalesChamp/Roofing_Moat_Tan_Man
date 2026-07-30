@@ -1,0 +1,63 @@
+{
+  "captureId": "018f3a2c-8d52-7f01-ab22-3c4d5e6f7081",
+  "schemaVersion": "1.0",
+  "repId": "5b2e1c9a-3d44-4f88-9012-aabbccddeeff",
+  "capturedAt": "2026-06-09T10:05:00-05:00",
+  "timezone": "America/Chicago",
+  "deviceClockUncertaintyMs": 45000,
+  "deviceType": "META_GLASSES",
+  "deviceModel": "Meta Ray-Ban Gen2",
+  "appVersion": "1.4.2",
+  "osVersion": "MetaOS 7.1",
+  "networkType": "OFFLINE",
+  "batteryLow": true,
+  "locale": "en-US",
+  "clientSeq": 77,
+  "geo": null,
+  "captureOrigin": "DOOR_KNOCK",
+  "target": {
+    "opportunityId": null,
+    "personId": null,
+    "matchHints": {
+      "name": { "firstName": "Maria", "lastName": "Gonzalez" },
+      "address": { "street1": "742 Evergreen Ter", "street2": null, "city": "Springfield", "state": "IL", "zip": "62704" },
+      "phoneE164": null
+    }
+  },
+  "audio": {
+    "fileId": "d2222222-3333-4444-8555-666677778888",
+    "pendingMediaId": null,
+    "filename": "doorknock.m4a",
+    "codec": "aac",
+    "container": "m4a",
+    "sampleRateHz": 16000,
+    "durationSec": 38.2,
+    "audioChannel": "MONO",
+    "channelCount": 1,
+    "bitrateKbps": 40,
+    "language": "en-US",
+    "sizeBytes": 201000,
+    "sha256": "7d865e959b2466918c9863afca942d0fb89d7c9ac0c99bafc3749504ded97730",
+    "caption": null
+  },
+  "photos": [
+    {
+      "fileId": "e3333333-4444-4555-8666-777788889999",
+      "pendingMediaId": null,
+      "filename": "front-elevation.jpg",
+      "mimeType": "image/jpeg",
+      "sequenceIndex": 0,
+      "widthPx": 2048,
+      "heightPx": 1152,
+      "sizeBytes": 980000,
+      "compressionQuality": 0.7,
+      "sha256": "1b4f0e9851971998e732078544c96b36c3d01cedf7caa332359d6f1d83567014",
+      "caption": "front elevation - missing shingles",
+      "tags": ["overview", "damage-closeup"],
+      "exif": { "gps": null, "orientation": 1, "timestamp": "2026-06-09T10:04:30-05:00" },
+      "capturedAt": "2026-06-09T10:04:30-05:00"
+    }
+  ],
+  "dispositionUpdate": null,
+  "clientNotes": "No answer first knock, photographed visible storm damage."
+}

@@ -1,0 +1,106 @@
+{
+  "name": "RE - Daily Task Reminder",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 7 * * 1-5" }]
+        }
+      },
+      "id": "4a4a4a4a-0001-4000-8000-000000000001",
+      "name": "Schedule: 7am Weekdays",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.TWENTY_API_URL}}/rest/tasks",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "qs": {
+            "parameters": [
+              { "name": "filter", "value": "status[neq]:DONE" },
+              { "name": "order_by", "value": "dueAt[AscNullsLast]" },
+              { "name": "limit", "value": "100" }
+            ]
+          }
+        }
+      },
+      "id": "4a4a4a4a-0002-4000-8000-000000000002",
+      "name": "Get Open Tasks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300],
+      "notes": "Create an HTTP Header Auth credential with header 'Authorization: Bearer <TWENTY_API_KEY>'."
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.first().json.data?.tasks ?? [];\nconst now = new Date();\nconst startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());\nconst endOfToday = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);\n\nconst overdue = [];\nconst dueToday = [];\n\nfor (const task of tasks) {\n  if (!task.dueAt) continue;\n  const dueAt = new Date(task.dueAt);\n  if (dueAt < startOfToday) {\n    overdue.push(task);\n  } else if (dueAt < endOfToday) {\n    dueToday.push(task);\n  }\n}\n\nif (overdue.length === 0 && dueToday.length === 0) {\n  return [];\n}\n\nconst lines = [];\nif (overdue.length) {\n  lines.push(`*Overdue (${overdue.length})*`);\n  lines.push(...overdue.map((t) => `- ${t.title}`));\n}\nif (dueToday.length) {\n  lines.push(`*Due Today (${dueToday.length})*`);\n  lines.push(...dueToday.map((t) => `- ${t.title}`));\n}\n\nreturn [{\n  json: {\n    overdueCount: overdue.length,\n    dueTodayCount: dueToday.length,\n    message: lines.join('\\n'),\n  },\n}];\n"
+      },
+      "id": "4a4a4a4a-0003-4000-8000-000000000003",
+      "name": "Build Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "4a4a4a4a-0004-4000-8000-000000000004",
+              "leftValue": "={{$json.message}}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEquals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "4a4a4a4a-0005-4000-8000-000000000005",
+      "name": "Has Tasks To Report?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{$env.NOTIFY_FROM_EMAIL}}",
+        "toEmail": "={{$env.NOTIFY_TO_EMAIL}}",
+        "subject": "=Acquisition tasks: {{$json.overdueCount}} overdue, {{$json.dueTodayCount}} due today",
+        "text": "={{$json.message}}",
+        "options": {}
+      },
+      "id": "4a4a4a4a-0006-4000-8000-000000000006",
+      "name": "Send Digest Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1080, 300],
+      "notes": "Requires an SMTP credential + NOTIFY_FROM_EMAIL / NOTIFY_TO_EMAIL env vars. Swap for a Slack node if you prefer chat notifications."
+    }
+  ],
+  "connections": {
+    "Schedule: 7am Weekdays": {
+      "main": [[{ "node": "Get Open Tasks", "type": "main", "index": 0 }]]
+    },
+    "Get Open Tasks": {
+      "main": [[{ "node": "Build Digest", "type": "main", "index": 0 }]]
+    },
+    "Build Digest": {
+      "main": [[{ "node": "Has Tasks To Report?", "type": "main", "index": 0 }]]
+    },
+    "Has Tasks To Report?": {
+      "main": [[{ "node": "Send Digest Email", "type": "main", "index": 0 }], []]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Runs weekday mornings, pulls open Tasks from Twenty, and emails a digest of anything overdue or due today. Adjust the cron expression and the REST filter query as needed."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "re-media-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local GraphQL file upload bridge for property-capture → Twenty",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "busboy": "^1.6.0"
+  }
+}

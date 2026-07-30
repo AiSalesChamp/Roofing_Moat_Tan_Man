@@ -1,0 +1,103 @@
+{
+  "name": "RE - Deal Stage Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "re-contract/deal-stage-changed",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1a1a1a1a-0001-4000-8000-000000000001",
+      "name": "Webhook: Deal Stage Changed",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "re-deal-stage-changed"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body ?? $input.first().json;\nconst dealName = body.name ?? 'Unnamed deal';\nconst stage = body.dealStage ?? 'UNKNOWN';\nconst previousStage = body.previousDealStage ?? '';\nconst opportunityId = body.id ?? body.opportunityId ?? '';\n\nreturn [{\n  json: {\n    opportunityId,\n    dealName,\n    stage,\n    previousStage,\n    message: `*${dealName}* moved from *${previousStage || 'n/a'}* -> *${stage}*`,\n  },\n}];\n"
+      },
+      "id": "1a1a1a1a-0002-4000-8000-000000000002",
+      "name": "Format Notification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{$env.SLACK_ACQUISITIONS_CHANNEL_ID}}"
+        },
+        "text": "={{$json.message}}",
+        "otherOptions": {}
+      },
+      "id": "1a1a1a1a-0003-4000-8000-000000000003",
+      "name": "Notify Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [680, 220],
+      "notes": "Requires a Slack credential + SLACK_ACQUISITIONS_CHANNEL_ID env var. Delete this node if you don't use Slack."
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{$env.NOTIFY_FROM_EMAIL}}",
+        "toEmail": "={{$env.NOTIFY_TO_EMAIL}}",
+        "subject": "=Deal update: {{$json.dealName}} -> {{$json.stage}}",
+        "text": "={{$json.message}}",
+        "options": {}
+      },
+      "id": "1a1a1a1a-0004-4000-8000-000000000004",
+      "name": "Notify Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [680, 380],
+      "notes": "Requires an SMTP credential + NOTIFY_FROM_EMAIL / NOTIFY_TO_EMAIL env vars. Delete this node if you don't use email."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": true, \"opportunityId\": $json.opportunityId, \"stage\": $json.stage } }}",
+        "options": {}
+      },
+      "id": "1a1a1a1a-0005-4000-8000-000000000005",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook: Deal Stage Changed": {
+      "main": [[{ "node": "Format Notification", "type": "main", "index": 0 }]]
+    },
+    "Format Notification": {
+      "main": [
+        [
+          { "node": "Notify Slack", "type": "main", "index": 0 },
+          { "node": "Notify Email", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Notify Slack": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    },
+    "Notify Email": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Import into n8n, then add a Twenty webhook logic function that POSTs { id, name, dealStage, previousDealStage } to this workflow's webhook URL on opportunity.updated when dealStage changes. Delete the Slack or Email branch you don't need."
+  }
+}

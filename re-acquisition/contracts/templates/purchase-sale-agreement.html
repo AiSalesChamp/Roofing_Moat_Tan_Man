@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Purchase and Sale Agreement — {{propertyAddress}}</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; font-size: 11pt; margin: 1in; line-height: 1.45; }
+    h1 { font-size: 15pt; text-align: center; margin-bottom: 20pt; }
+    h2 { font-size: 12pt; margin-top: 18pt; }
+    .field { border-bottom: 1px solid #000; display: inline-block; min-width: 180px; }
+    .signature-block { margin-top: 36pt; page-break-inside: avoid; }
+    .signature-line { border-top: 1px solid #000; width: 280px; margin-top: 40pt; }
+  </style>
+</head>
+<body>
+  <h1>REAL ESTATE PURCHASE AND SALE AGREEMENT</h1>
+
+  <p><strong>Contract Date:</strong> <span class="field">{{contractDate}}</span></p>
+
+  <h2>1. PARTIES</h2>
+  <p>
+    Seller: <span class="field">{{sellerName}}</span><br />
+    Buyer: <span class="field">{{buyerEntityName}}</span>
+  </p>
+
+  <h2>2. PROPERTY</h2>
+  <p>
+    Address: <span class="field">{{propertyAddress}}</span><br />
+    APN: <span class="field">{{apn}}</span><br />
+    County: <span class="field">{{county}}</span><br />
+    Legal Description: <span class="field">{{legalDescription}}</span>
+  </p>
+
+  <h2>3. PURCHASE PRICE</h2>
+  <p>
+    Total purchase price: <strong>${{contractPrice}}</strong><br />
+    Earnest money deposit: <strong>${{earnestMoney}}</strong>, due within three (3)
+    business days of execution.
+  </p>
+
+  <h2>4. DUE DILIGENCE</h2>
+  <p>
+    Buyer shall have until <span class="field">{{ddDeadline}}</span> to conduct
+    inspections, review title, survey, environmental reports, and zoning compliance.
+    Buyer may terminate for any reason during the due diligence period and receive a
+    full refund of earnest money.
+  </p>
+
+  <h2>5. CLOSING</h2>
+  <p>
+    Closing shall occur on or before <span class="field">{{closingDate}}</span> at a
+    title company mutually agreed upon by the parties.
+  </p>
+
+  <h2>6. ASSIGNMENT</h2>
+  <p>
+    Buyer may assign this contract to a third party without Seller consent, provided
+  Buyer remains liable for performance unless released in writing by Seller.
+  </p>
+
+  <div class="signature-block">
+    <p><strong>SELLER:</strong> {{sellerName}}</p>
+    <div class="signature-line"></div>
+    <p>Date: _______________</p>
+  </div>
+
+  <div class="signature-block">
+    <p><strong>BUYER:</strong> {{buyerEntityName}}</p>
+    <div class="signature-line"></div>
+    <p>Authorized Signatory — Date: _______________</p>
+  </div>
+</body>
+</html>

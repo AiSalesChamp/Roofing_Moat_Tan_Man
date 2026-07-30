@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://re-acquisition.crm/schemas/seller-call-extraction-1.0.json",
+  "title": "SellerCallExtraction",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["documentMeta", "identity", "disposition", "extractionMeta"],
+  "properties": {
+    "documentMeta": {
+      "type": "object",
+      "properties": {
+        "referenceTimestamp": { "type": ["string", "null"], "format": "date-time" },
+        "transcriptComplete": { "type": "boolean" },
+        "noExtractableContent": { "type": "boolean" }
+      }
+    },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "sellerFullName": { "type": ["object", "null"] },
+        "sellerEmail": { "type": ["string", "null"] },
+        "leadPhoneE164": { "type": ["string", "null"] },
+        "propertyAddress": { "type": ["object", "null"] },
+        "apn": { "type": ["object", "null"], "description": "{value, quote}" },
+        "leadSource": { "type": ["string", "null"] }
+      }
+    },
+    "disposition": {
+      "type": "object",
+      "properties": {
+        "callOutcome": { "type": ["string", "null"] },
+        "sellerMotivation": { "type": ["array", "null"], "items": { "type": "string" } },
+        "askingPrice": { "type": ["object", "null"], "description": "{value, quote}" },
+        "timelineToSell": { "type": ["string", "null"] },
+        "propertyConditionNotes": { "type": ["string", "null"] },
+        "objections": { "type": ["array", "null"], "items": { "type": "string" } },
+        "followUpCommitment": { "type": ["string", "null"] },
+        "dealTypeHint": { "type": ["array", "null"], "items": { "type": "string" } }
+      }
+    },
+    "extractionMeta": {
+      "type": "object",
+      "properties": {
+        "externalCallId": { "type": "string" },
+        "modelVersion": { "type": ["string", "null"] }
+      },
+      "required": ["externalCallId"]
+    }
+  }
+}

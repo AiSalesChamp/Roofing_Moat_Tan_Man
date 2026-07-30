@@ -1,0 +1,11 @@
+erpnext/
+frappe/
+n8n/
+temporal/
+supabase/
+airbyte/
+crewAI/
+caveman/
+langgraph/
+skills/
+re-lead-engine/

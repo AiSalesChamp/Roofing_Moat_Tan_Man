@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#1a6b4a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>RE Property Capture</title>
+</head>
+<body>
+  <header>
+    <h1>Property Capture</h1>
+    <span id="online-status" class="badge PENDING">…</span>
+  </header>
+
+  <nav class="tabs">
+    <button type="button" data-screen="capture" class="active">Capture</button>
+    <button type="button" data-screen="queue">Queue</button>
+    <button type="button" data-screen="settings">Settings</button>
+  </nav>
+
+  <main>
+    <section id="screen-capture" class="screen active">
+      <div id="network-bar" class="status-bar online">Online</div>
+
+      <label for="street1">Street address</label>
+      <input id="street1" type="text" placeholder="4820 N Cave Creek Rd" autocomplete="street-address" />
+
+      <div class="gps-row">
+        <div style="flex:1">
+          <label for="city">City</label>
+          <input id="city" type="text" placeholder="Phoenix" />
+        </div>
+        <div style="flex:0 0 80px">
+          <label for="state">State</label>
+          <input id="state" type="text" placeholder="AZ" maxlength="2" />
+        </div>
+      </div>
+
+      <label for="zip">ZIP</label>
+      <input id="zip" type="text" placeholder="85018" inputmode="numeric" />
+
+      <button type="button" id="btn-gps" class="btn secondary">Use GPS location</button>
+
+      <label for="capture-origin">Capture type</label>
+      <select id="capture-origin">
+        <option value="DRIVE_BY">Drive-by</option>
+        <option value="SITE_WALK">Site walk</option>
+        <option value="PHOTO_LOG">Photo log</option>
+        <option value="VOICE_MEMO">Voice memo</option>
+      </select>
+
+      <label>Photos (<span id="photo-count">0</span>/5)</label>
+      <div id="photo-grid" class="photo-grid"></div>
+      <button type="button" id="btn-photo" class="btn secondary">Add photo</button>
+      <input id="camera-input" type="file" accept="image/*" capture="environment" />
+
+      <label>Voice memo</label>
+      <div id="voice-status" class="voice-status">Hold record to capture voice notes</div>
+      <button type="button" id="btn-record" class="btn record">Hold to record</button>
+
+      <label for="notes">Notes (optional)</label>
+      <textarea id="notes" rows="2" placeholder="Quick field notes…"></textarea>
+
+      <button type="button" id="btn-save" class="btn primary">Save to queue</button>
+    </section>
+
+    <section id="screen-queue" class="screen">
+      <button type="button" id="btn-sync-all" class="btn primary">Sync all pending</button>
+      <div id="queue-list"></div>
+    </section>
+
+    <section id="screen-settings" class="screen">
+      <label for="media-gateway-url">Media gateway URL (photos/audio)</label>
+      <input id="media-gateway-url" type="url" placeholder="http://127.0.0.1:3081" />
+
+      <label for="n8n-url">n8n base URL (bundle sync)</label>
+      <input id="n8n-url" type="url" placeholder="http://127.0.0.1:5678" />
+
+      <label for="webhook-secret">Shared secret</label>
+      <input id="webhook-secret" type="password" placeholder="From re-ops .env" />
+
+      <label for="rep-id">Rep ID (UUID)</label>
+      <input id="rep-id" type="text" placeholder="Auto-generated" />
+
+      <button type="button" id="btn-save-settings" class="btn primary">Save settings</button>
+      <p style="color:var(--muted);font-size:0.8rem;margin-top:12px">
+        Local defaults: media gateway <code>3081</code>, n8n <code>5678</code>.
+        Secrets come from <code>./bin/re-ops init</code> (<code>MEDIA_GATEWAY_SECRET</code> /
+        <code>N8N_CAPTURE_WEBHOOK_SECRET</code>). Phone on same machine only when bound to
+        127.0.0.1 — use USB reverse-proxy or intentional LAN bind for field tests.
+      </p>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

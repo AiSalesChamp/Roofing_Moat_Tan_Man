@@ -1,0 +1,186 @@
+{
+  "name": "RE - Voice Extraction",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "re-voice/extract",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "v1000001-0001-4000-8000-000000000001",
+      "name": "Webhook: Voice Extract",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 400],
+      "webhookId": "re-voice-extract"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "v1000001-0001-4000-8000-000000000002",
+              "leftValue": "={{$headers['x-webhook-secret']}}",
+              "rightValue": "={{$env.N8N_VOICE_WEBHOOK_SECRET}}",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "v1000001-0002-4000-8000-000000000002",
+      "name": "Verify Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [420, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body ?? $input.first().json;\nconst transcript = body.transcript ?? '';\nconst externalCallId = body.externalCallId ?? body.captureId ?? `call-${Date.now()}`;\nconst kind = body.kind ?? 'seller-call';\n\nif (!transcript.trim()) {\n  throw new Error('transcript is required. Run stt/transcribe.py on audio first, or POST transcript in body.');\n}\n\nconst sharedGuidelines = `- Every field is nullable unless explicitly required by schema.\n- High-stakes fields (price, APN, dates) MUST use {value, quote} — drop value if quote is missing.\n- Never invent data not spoken or clearly implied in the transcript.`;\n\nconst sellerPrompt = `# Seller Call Extraction — System Prompt\n\nYou extract structured RE acquisition data from seller/broker call transcripts.\n\n${sharedGuidelines}\n\nFocus on seller motivation, asking price, property address, APN, timeline, condition, objections, follow-up, deal type hints.\n\nRespond with ONLY valid JSON matching SellerCallExtraction schema. Set extractionMeta.externalCallId to the provided id.`;\n\nreturn [{\n  json: {\n    transcript,\n    externalCallId,\n    kind,\n    systemPrompt: kind === 'site-memo'\n      ? sellerPrompt.replace('Seller Call', 'Site Memo')\n      : sellerPrompt,\n  },\n}];\n"
+      },
+      "id": "v1000001-0003-4000-8000-000000000003",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.OLLAMA_BASE_URL || 'http://ollama:11434'}}/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: $env.OLLAMA_MODEL || 'qwen2.5:7b', stream: false, format: 'json', messages: [ { role: 'system', content: $json.systemPrompt }, { role: 'user', content: 'externalCallId: ' + $json.externalCallId + '\\n\\nTRANSCRIPT:\\n' + $json.transcript } ] } }}",
+        "options": {}
+      },
+      "id": "v1000001-0004-4000-8000-000000000004",
+      "name": "Ollama Extract",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { v5: uuidv5 } = require('uuid');\nconst NS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';\nconst did = (seed, label) => uuidv5(`${seed}:${label}`, NS);\n\nconst ollama = $input.first().json;\nconst prev = $('Normalize Input').first().json;\nconst transcript = prev.transcript;\nconst callId = prev.externalCallId;\n\nlet raw = ollama.message?.content ?? '';\nlet extraction;\ntry {\n  extraction = JSON.parse(raw);\n} catch {\n  const m = raw.match(/\\{[\\s\\S]*\\}/);\n  if (!m) throw new Error('Ollama returned non-JSON');\n  extraction = JSON.parse(m[0]);\n}\nif (!extraction.extractionMeta) extraction.extractionMeta = {};\nextraction.extractionMeta.externalCallId = extraction.extractionMeta.externalCallId || callId;\n\nconst identity = extraction.identity || {};\nconst disposition = extraction.disposition || {};\n\nconst toAddress = (addr) => {\n  if (!addr) return null;\n  if (addr.addressStreet1) return addr;\n  return {\n    addressStreet1: addr.street1 || '',\n    addressStreet2: addr.street2 || null,\n    addressCity: addr.city || '',\n    addressState: addr.state || '',\n    addressPostcode: addr.zip || '',\n    addressCountry: 'United States',\n  };\n};\n\nconst address = toAddress(identity.propertyAddress);\nconst addressKey = address ? `${address.addressStreet1}|${address.addressCity}|${address.addressState}|${address.addressPostcode}` : callId;\n\nconst propertyId = did(addressKey, 'property');\nconst opportunityId = did(callId, 'opportunity');\nconst personId = identity.leadPhoneE164 ? did(identity.leadPhoneE164, 'person') : null;\nconst transcriptId = did(callId, 'callTranscript');\n\nconst toCurrency = (v) => {\n  const num = typeof v === 'object' ? v?.value : v;\n  if (num == null) return null;\n  return { amountMicros: Math.round(Number(num) * 1e6), currencyCode: 'USD' };\n};\n\nreturn [{\n  json: {\n    extraction,\n    transcript,\n    callId,\n    propertyId,\n    opportunityId,\n    personId,\n    transcriptId,\n    propertyPayload: {\n      id: propertyId,\n      ...(address ? { propertyAddress: address } : {}),\n      ...(identity.apn?.value ? { apn: identity.apn.value } : {}),\n    },\n    opportunityPayload: {\n      id: opportunityId,\n      name: address?.addressStreet1 ? `${address.addressStreet1} — Seller call` : `Seller call ${callId.slice(0,8)}`,\n      propertyId,\n      ...(address ? { propertyAddress: address } : {}),\n      dealStage: 'QUALIFYING',\n      ...(identity.leadSource ? { leadSource: identity.leadSource } : {}),\n      ...(disposition.sellerMotivation ? { motivation: disposition.sellerMotivation } : {}),\n      ...(disposition.dealTypeHint ? { dealType: disposition.dealTypeHint } : {}),\n      ...(toCurrency(disposition.askingPrice) ? { askingPrice: toCurrency(disposition.askingPrice) } : {}),\n    },\n    personPayload: personId ? {\n      id: personId,\n      ...(identity.sellerEmail ? { emails: { primaryEmail: identity.sellerEmail, additionalEmails: [] } } : {}),\n    } : null,\n    transcriptPayload: {\n      id: transcriptId,\n      transcriptBody: { markdown: transcript, blocknote: null },\n      callOutcome: disposition.callOutcome || 'CONNECTED',\n      extractedData: extraction,\n      transcriptOpportunityId: opportunityId,\n      ...(personId ? { transcriptPersonId: personId } : {}),\n    },\n  },\n}];\n"
+      },
+      "id": "v1000001-0005-4000-8000-000000000005",
+      "name": "Build Twenty Payloads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.TWENTY_API_URL}}/rest/properties?upsert=true",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json.propertyPayload}}",
+        "options": {}
+      },
+      "id": "v1000001-0006-4000-8000-000000000006",
+      "name": "Upsert Property",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 300],
+      "notes": "HTTP Header Auth: Authorization Bearer TWENTY_API_KEY"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.TWENTY_API_URL}}/rest/opportunities?upsert=true",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$('Build Twenty Payloads').item.json.opportunityPayload}}",
+        "options": {}
+      },
+      "id": "v1000001-0007-4000-8000-000000000007",
+      "name": "Upsert Opportunity",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1520, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.TWENTY_API_URL}}/rest/callTranscripts?upsert=true",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$('Build Twenty Payloads').item.json.transcriptPayload}}",
+        "options": {}
+      },
+      "id": "v1000001-0008-4000-8000-000000000008",
+      "name": "Upsert CallTranscript",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1740, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, callId: $('Build Twenty Payloads').item.json.callId, propertyId: $('Build Twenty Payloads').item.json.propertyId, opportunityId: $('Build Twenty Payloads').item.json.opportunityId, callTranscriptId: $('Build Twenty Payloads').item.json.transcriptId } }}",
+        "options": {}
+      },
+      "id": "v1000001-0009-4000-8000-000000000009",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1960, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, error: 'Unauthorized' } }}",
+        "options": { "responseCode": 401 }
+      },
+      "id": "v1000001-0010-4000-8000-000000000010",
+      "name": "Respond Unauthorized",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [640, 520]
+    }
+  ],
+  "connections": {
+    "Webhook: Voice Extract": {
+      "main": [[{ "node": "Verify Secret", "type": "main", "index": 0 }]]
+    },
+    "Verify Secret": {
+      "main": [
+        [{ "node": "Normalize Input", "type": "main", "index": 0 }],
+        [{ "node": "Respond Unauthorized", "type": "main", "index": 0 }]
+      ]
+    },
+    "Normalize Input": {
+      "main": [[{ "node": "Ollama Extract", "type": "main", "index": 0 }]]
+    },
+    "Ollama Extract": {
+      "main": [[{ "node": "Build Twenty Payloads", "type": "main", "index": 0 }]]
+    },
+    "Build Twenty Payloads": {
+      "main": [[{ "node": "Upsert Property", "type": "main", "index": 0 }]]
+    },
+    "Upsert Property": {
+      "main": [[{ "node": "Upsert Opportunity", "type": "main", "index": 0 }]]
+    },
+    "Upsert Opportunity": {
+      "main": [[{ "node": "Upsert CallTranscript", "type": "main", "index": 0 }]]
+    },
+    "Upsert CallTranscript": {
+      "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {
+    "description": "Seller call transcript → Ollama extraction → Twenty CRM upsert. POST { transcript, externalCallId, kind } with X-Webhook-Secret header. For audio, run stt/transcribe.py first."
+  }
+}

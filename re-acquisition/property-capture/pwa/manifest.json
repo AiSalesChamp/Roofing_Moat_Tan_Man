@@ -1,0 +1,10 @@
+{
+  "name": "RE Property Capture",
+  "short_name": "Capture",
+  "description": "Field capture for RE acquisition — photos, voice, GPS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1419",
+  "theme_color": "#1a6b4a",
+  "orientation": "portrait"
+}
