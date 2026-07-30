@@ -73,12 +73,15 @@ export default defineObject({
       ],
     },
     {
+      // CAD rolls publish acreage to four decimal places; an integer field
+      // stores a 0.34-acre lot as 0 (DRIFT.md section C).
       universalIdentifier: PROPERTY_ACREAGE_FIELD_ID,
       type: FieldType.NUMBER,
       name: 'acreage',
       label: 'Acreage',
       icon: 'IconRulerMeasure',
       isNullable: true,
+      universalSettings: { decimals: 4 },
     },
     {
       universalIdentifier: PROPERTY_SQFT_FIELD_ID,

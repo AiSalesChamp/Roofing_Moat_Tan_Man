@@ -165,7 +165,7 @@ export default defineObject({
       label: 'Parse Confidence',
       icon: 'IconPercentage',
       isNullable: true,
-      settings: { decimals: 2 },
+      universalSettings: { decimals: 2 },
     },
     {
       universalIdentifier: DISTRESS_EVENT_RAW_PAYLOAD_FIELD_ID,
