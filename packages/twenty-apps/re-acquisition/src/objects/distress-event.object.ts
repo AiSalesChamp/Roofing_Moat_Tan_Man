@@ -1,0 +1,188 @@
+import { FieldType, defineObject } from 'twenty-sdk/define';
+
+import {
+  DISTRESS_EVENT_ADJUDGED_VALUE_FIELD_ID,
+  DISTRESS_EVENT_CAUSE_NUMBER_FIELD_ID,
+  DISTRESS_EVENT_CONFIDENCE_FIELD_ID,
+  DISTRESS_EVENT_COUNTY_FIPS_FIELD_ID,
+  DISTRESS_EVENT_DATE_FIELD_ID,
+  DISTRESS_EVENT_ENGINE_ID_FIELD_ID,
+  DISTRESS_EVENT_MINIMUM_BID_FIELD_ID,
+  DISTRESS_EVENT_NAME_FIELD_ID,
+  DISTRESS_EVENT_OBJECT_UNIVERSAL_IDENTIFIER,
+  DISTRESS_EVENT_RAW_PAYLOAD_FIELD_ID,
+  DISTRESS_EVENT_SALE_DATE_FIELD_ID,
+  DISTRESS_EVENT_SOURCE_DOC_REF_FIELD_ID,
+  DISTRESS_EVENT_SOURCE_URL_FIELD_ID,
+  DISTRESS_EVENT_TYPE_FIELD_ID,
+} from 'src/constants/lead-engine-identifiers';
+
+// The core signal layer surfaced into the CRM. One property has many of these over
+// time — a 2024 tax sale and a 2025 tax sale are two events, not one updated record.
+//
+// Only events on promoted properties reach Twenty. The full history, including
+// events that never matched a parcel, stays in the engine's Postgres.
+export default defineObject({
+  universalIdentifier: DISTRESS_EVENT_OBJECT_UNIVERSAL_IDENTIFIER,
+  nameSingular: 'distressEvent',
+  namePlural: 'distressEvents',
+  labelSingular: 'Distress Event',
+  labelPlural: 'Distress Events',
+  description: 'A public foreclosure, tax delinquency, probate or lien signal on a parcel',
+  icon: 'IconAlertTriangle',
+  isSearchable: true,
+  labelIdentifierFieldMetadataUniversalIdentifier: DISTRESS_EVENT_NAME_FIELD_ID,
+  fields: [
+    {
+      universalIdentifier: DISTRESS_EVENT_NAME_FIELD_ID,
+      type: FieldType.TEXT,
+      name: 'name',
+      label: 'Event',
+      icon: 'IconAlertTriangle',
+    },
+    {
+      universalIdentifier: DISTRESS_EVENT_TYPE_FIELD_ID,
+      type: FieldType.SELECT,
+      name: 'type',
+      label: 'Type',
+      icon: 'IconCategory',
+      defaultValue: "'TAX_SALE'",
+      options: [
+        {
+          id: 'a1000007-0001-4000-8000-000000000001',
+          value: 'NOTICE_OF_TRUSTEE_SALE',
+          label: 'Notice of Trustee Sale',
+          position: 0,
+          color: 'red',
+        },
+        {
+          id: 'a1000007-0001-4000-8000-000000000002',
+          value: 'TAX_SALE',
+          label: 'Tax Sale',
+          position: 1,
+          color: 'orange',
+        },
+        {
+          id: 'a1000007-0001-4000-8000-000000000003',
+          value: 'STRUCK_OFF',
+          label: 'Struck Off',
+          position: 2,
+          color: 'yellow',
+        },
+        {
+          id: 'a1000007-0001-4000-8000-000000000004',
+          value: 'PROBATE',
+          label: 'Probate',
+          position: 3,
+          color: 'purple',
+        },
+        {
+          id: 'a1000007-0001-4000-8000-000000000005',
+          value: 'LIEN',
+          label: 'Lien',
+          position: 4,
+          color: 'blue',
+        },
+        {
+          id: 'a1000007-0001-4000-8000-000000000006',
+          value: 'CODE_VIOLATION',
+          label: 'Code Violation',
+          position: 5,
+          color: 'gray',
+        },
+      ],
+    },
+    {
+      universalIdentifier: DISTRESS_EVENT_DATE_FIELD_ID,
+      type: FieldType.DATE,
+      name: 'eventDate',
+      label: 'Event Date',
+      icon: 'IconCalendarEvent',
+      isNullable: true,
+    },
+    {
+      universalIdentifier: DISTRESS_EVENT_SALE_DATE_FIELD_ID,
+      type: FieldType.DATE,
+      name: 'saleDate',
+      label: 'Sale Date',
+      icon: 'IconGavel',
+      isNullable: true,
+    },
+    {
+      universalIdentifier: DISTRESS_EVENT_COUNTY_FIPS_FIELD_ID,
+      type: FieldType.TEXT,
+      name: 'countyFips',
+      label: 'County FIPS',
+      icon: 'IconMap',
+      isNullable: true,
+    },
+    {
+      universalIdentifier: DISTRESS_EVENT_CAUSE_NUMBER_FIELD_ID,
+      type: FieldType.TEXT,
+      name: 'causeNumber',
+      label: 'Cause Number',
+      icon: 'IconFileText',
+      isNullable: true,
+    },
+    {
+      universalIdentifier: DISTRESS_EVENT_ADJUDGED_VALUE_FIELD_ID,
+      type: FieldType.CURRENCY,
+      name: 'adjudgedValue',
+      label: 'Adjudged Value',
+      icon: 'IconCoin',
+      isNullable: true,
+    },
+    {
+      universalIdentifier: DISTRESS_EVENT_MINIMUM_BID_FIELD_ID,
+      type: FieldType.CURRENCY,
+      name: 'minimumBid',
+      label: 'Minimum Bid',
+      icon: 'IconCoins',
+      isNullable: true,
+    },
+    {
+      universalIdentifier: DISTRESS_EVENT_SOURCE_URL_FIELD_ID,
+      type: FieldType.LINKS,
+      name: 'sourceUrl',
+      label: 'Source',
+      icon: 'IconLink',
+      isNullable: true,
+    },
+    {
+      universalIdentifier: DISTRESS_EVENT_SOURCE_DOC_REF_FIELD_ID,
+      type: FieldType.TEXT,
+      name: 'sourceDocRef',
+      label: 'Source Doc Ref',
+      icon: 'IconFileSearch',
+      isNullable: true,
+    },
+    {
+      // 0..1. Low values mean the value was reconstructed from a PDF table rather
+      // than read from a labelled field, and should be verified before acting.
+      universalIdentifier: DISTRESS_EVENT_CONFIDENCE_FIELD_ID,
+      type: FieldType.NUMBER,
+      name: 'confidence',
+      label: 'Parse Confidence',
+      icon: 'IconPercentage',
+      isNullable: true,
+      settings: { decimals: 2 },
+    },
+    {
+      universalIdentifier: DISTRESS_EVENT_RAW_PAYLOAD_FIELD_ID,
+      type: FieldType.RAW_JSON,
+      name: 'rawPayload',
+      label: 'Raw Payload',
+      icon: 'IconCode',
+      isNullable: true,
+    },
+    {
+      // The engine's own id. Makes promotion an idempotent upsert.
+      universalIdentifier: DISTRESS_EVENT_ENGINE_ID_FIELD_ID,
+      type: FieldType.TEXT,
+      name: 'engineEventId',
+      label: 'Engine Event ID',
+      icon: 'IconFingerprint',
+      isNullable: true,
+    },
+  ],
+});
