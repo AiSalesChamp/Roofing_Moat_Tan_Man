@@ -139,8 +139,25 @@ services:
       TWENTY_API_KEY: ${TWENTY_API_KEY:-}
       MEDIA_GATEWAY_SECRET: ${MEDIA_GATEWAY_SECRET}
       ATTACHMENT_FILE_FIELD_METADATA_ID: ${ATTACHMENT_FILE_FIELD_METADATA_ID:-}
+      WHISPER_STT_URL: http://whisper-stt:9000
     extra_hosts:
       - 'host.docker.internal:host-gateway'
+    depends_on:
+      whisper-stt:
+        condition: service_started
+    restart: unless-stopped
+
+  # CPU speech-to-text for voice memos. Audio uploaded through media-gateway is
+  # transcribed here automatically; n8n voice-extraction fetches the result.
+  whisper-stt:
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    ports:
+      - '${BIND_HOST:-127.0.0.1}:3007:9000'
+    environment:
+      ASR_ENGINE: faster_whisper
+      ASR_MODEL: ${WHISPER_MODEL:-base}
+    volumes:
+      - whisper-cache:/root/.cache
     restart: unless-stopped
 
   capture-pwa:
@@ -157,3 +174,4 @@ volumes:
   open-webui-data:
   docuseal-data:
   docuseal-db-data:
+  whisper-cache:

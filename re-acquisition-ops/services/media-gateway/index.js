@@ -28,6 +28,45 @@ const ALLOWED_MIME = new Set([
 
 let cachedFieldMetadataId = process.env.ATTACHMENT_FILE_FIELD_METADATA_ID || '';
 
+const WHISPER_STT_URL = (process.env.WHISPER_STT_URL || '').replace(/\/$/, '');
+const TRANSCRIPT_CACHE_MAX = 200;
+
+// Transcriptions run in the background while the upload response returns.
+// Keyed by both fileId and pendingMediaId so callers can use either.
+// In-memory only: a gateway restart between upload and bundle submit loses the
+// transcript, and GET /transcript then reports 404 (caller falls back to
+// manual STT).
+const transcriptJobs = new Map();
+
+const rememberTranscriptJob = (keys, job) => {
+  for (const key of keys) {
+    if (!key) continue;
+    transcriptJobs.set(key, job);
+    if (transcriptJobs.size > TRANSCRIPT_CACHE_MAX) {
+      const oldest = transcriptJobs.keys().next().value;
+      transcriptJobs.delete(oldest);
+    }
+  }
+};
+
+const transcribeAudio = async ({ buffer, filename, contentType }) => {
+  const form = new FormData();
+  form.append('audio_file', new Blob([buffer], { type: contentType }), filename);
+  const response = await fetch(
+    `${WHISPER_STT_URL}/asr?task=transcribe&encode=true&output=json`,
+    { method: 'POST', body: form },
+  );
+  if (!response.ok) {
+    throw new Error(`Whisper STT failed: HTTP ${response.status}`);
+  }
+  const payload = await response.json();
+  const text = (payload.text || '').trim();
+  if (!text) {
+    throw new Error('Whisper STT returned empty transcript');
+  }
+  return text;
+};
+
 const json = (response, statusCode, body) => {
   const payload = JSON.stringify(body);
   response.writeHead(statusCode, {
@@ -250,6 +289,20 @@ const server = createServer(async (request, response) => {
         contentType: contentType || 'application/octet-stream',
       });
 
+      const isAudio = contentType.startsWith('audio/');
+      let transcriptPending = false;
+      if (isAudio && WHISPER_STT_URL) {
+        transcriptPending = true;
+        const job = transcribeAudio({
+          buffer: parsed.buffer,
+          filename: parsed.filename,
+          contentType,
+        });
+        // Swallow here; GET /transcript surfaces the error to the caller.
+        job.catch(() => {});
+        rememberTranscriptJob([uploaded.id, pendingMediaId], job);
+      }
+
       json(response, 201, {
         mediaId: pendingMediaId,
         fileId: uploaded.id,
@@ -259,10 +312,39 @@ const server = createServer(async (request, response) => {
         filename: parsed.filename,
         size: uploaded.size,
         url: uploaded.url,
+        transcriptPending,
         receivedAt: new Date().toISOString(),
       });
     } catch (error) {
       json(response, 500, {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    return;
+  }
+
+  if (request.method === 'GET' && url.pathname === '/transcript') {
+    if (!assertSecret(request, response)) {
+      return;
+    }
+    const key =
+      url.searchParams.get('fileId') ||
+      url.searchParams.get('pendingMediaId') ||
+      '';
+    const job = key ? transcriptJobs.get(key) : undefined;
+    if (!job) {
+      json(response, 404, {
+        ok: false,
+        error: 'No transcript job for that id (expired, restarted, or never audio)',
+      });
+      return;
+    }
+    try {
+      const transcript = await job;
+      json(response, 200, { ok: true, transcript });
+    } catch (error) {
+      json(response, 502, {
         ok: false,
         error: error instanceof Error ? error.message : String(error),
       });

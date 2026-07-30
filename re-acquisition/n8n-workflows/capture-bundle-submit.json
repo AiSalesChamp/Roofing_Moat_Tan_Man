@@ -12,19 +12,29 @@
       "name": "Webhook: Bundle Submit",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [200, 400],
+      "position": [
+        200,
+        400
+      ],
       "webhookId": "re-capture-bundle"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "c2000001-0001-4000-8000-000000000002",
               "leftValue": "={{$headers['x-webhook-secret']}}",
               "rightValue": "={{$env.N8N_CAPTURE_WEBHOOK_SECRET}}",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -34,17 +44,23 @@
       "name": "Verify Secret",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [420, 400]
+      "position": [
+        420,
+        400
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const { v5: uuidv5 } = require('uuid');\nconst NS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';\nconst did = (seed, label) => uuidv5(`${seed}:${label}`, NS);\n\nconst bundle = $input.first().json.body ?? $input.first().json;\nconst captureId = bundle.captureId;\nif (!captureId) throw new Error('captureId required');\n\nconst hints = bundle.target?.matchHints?.address || {};\nconst address = {\n  addressStreet1: hints.street1 || '',\n  addressStreet2: null,\n  addressCity: hints.city || '',\n  addressState: hints.state || '',\n  addressPostcode: hints.zip || '',\n  addressCountry: 'United States',\n};\nconst addressKey = `${address.addressStreet1}|${address.addressCity}|${address.addressState}|${address.addressPostcode}`;\n\nconst propertyId = bundle.target?.propertyId || did(addressKey || captureId, 'property');\nconst opportunityId = bundle.target?.opportunityId || did(captureId, 'opportunity');\nconst inspectionId = did(captureId, 'inspection');\n\nconst originMap = {\n  DRIVE_BY: 'DRIVE_BY',\n  SITE_WALK: 'WALKTHROUGH',\n  PHOTO_LOG: 'WALKTHROUGH',\n  VOICE_MEMO: 'DRIVE_BY',\n};\nconst inspectionType = originMap[bundle.captureOrigin] || 'DRIVE_BY';\n\nconst oppName = address.addressStreet1\n  ? `${address.addressStreet1} — Capture ${bundle.capturedAt?.slice(0,10) || ''}`\n  : `Capture ${captureId.slice(0,8)}`;\n\nconst noteBody = `[RE acquisition capture pending extraction]\\n\\n${bundle.clientNotes || ''}`;\n\nreturn [{\n  json: {\n    bundle,\n    captureId,\n    propertyId,\n    opportunityId,\n    inspectionId,\n    inspectionType,\n    address,\n    oppName,\n    noteBody,\n    hasAudio: !!(bundle.audio?.fileId || bundle.audio?.pendingMediaId),\n  },\n}];\n"
+        "jsCode": "const { v5: uuidv5 } = require('uuid');\nconst NS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';\nconst did = (seed, label) => uuidv5(`${seed}:${label}`, NS);\n\nconst bundle = $input.first().json.body ?? $input.first().json;\nconst captureId = bundle.captureId;\nif (!captureId) throw new Error('captureId required');\n\nconst hints = bundle.target?.matchHints?.address || {};\nconst address = {\n  addressStreet1: hints.street1 || '',\n  addressStreet2: null,\n  addressCity: hints.city || '',\n  addressState: hints.state || '',\n  addressPostcode: hints.zip || '',\n  addressCountry: 'United States',\n};\nconst addressKey = `${address.addressStreet1}|${address.addressCity}|${address.addressState}|${address.addressPostcode}`;\n\nconst propertyId = bundle.target?.propertyId || did(addressKey || captureId, 'property');\nconst opportunityId = bundle.target?.opportunityId || did(captureId, 'opportunity');\nconst inspectionId = did(captureId, 'inspection');\n\nconst originMap = {\n  DRIVE_BY: 'DRIVE_BY',\n  SITE_WALK: 'WALKTHROUGH',\n  PHOTO_LOG: 'WALKTHROUGH',\n  VOICE_MEMO: 'DRIVE_BY',\n};\nconst inspectionType = originMap[bundle.captureOrigin] || 'DRIVE_BY';\n\nconst oppName = address.addressStreet1\n  ? `${address.addressStreet1} \u2014 Capture ${bundle.capturedAt?.slice(0,10) || ''}`\n  : `Capture ${captureId.slice(0,8)}`;\n\nconst noteBody = `[RE acquisition capture pending extraction]\\n\\n${bundle.clientNotes || ''}`;\n\nreturn [{\n  json: {\n    bundle,\n    captureId,\n    propertyId,\n    opportunityId,\n    inspectionId,\n    inspectionType,\n    address,\n    oppName,\n    noteBody,\n    hasAudio: !!(bundle.audio?.fileId || bundle.audio?.pendingMediaId),\n  },\n}];\n"
       },
       "id": "c2000001-0003-4000-8000-000000000003",
       "name": "Build Payloads",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [640, 300]
+      "position": [
+        640,
+        300
+      ]
     },
     {
       "parameters": {
@@ -61,7 +77,10 @@
       "name": "Upsert Property",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [860, 300]
+      "position": [
+        860,
+        300
+      ]
     },
     {
       "parameters": {
@@ -78,7 +97,10 @@
       "name": "Upsert Opportunity",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1080, 300]
+      "position": [
+        1080,
+        300
+      ]
     },
     {
       "parameters": {
@@ -95,7 +117,10 @@
       "name": "Upsert Note",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1300, 300]
+      "position": [
+        1300,
+        300
+      ]
     },
     {
       "parameters": {
@@ -112,7 +137,10 @@
       "name": "Upsert NoteTarget",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1520, 300]
+      "position": [
+        1520,
+        300
+      ]
     },
     {
       "parameters": {
@@ -129,18 +157,28 @@
       "name": "Upsert Inspection",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1740, 300]
+      "position": [
+        1740,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "c2000001-0001-4000-8000-000000000009",
               "leftValue": "={{$('Build Payloads').item.json.hasAudio}}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "true" }
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
             }
           ],
           "combinator": "and"
@@ -150,7 +188,10 @@
       "name": "Has Audio?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1960, 300]
+      "position": [
+        1960,
+        300
+      ]
     },
     {
       "parameters": {
@@ -159,20 +200,31 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-Webhook-Secret", "value": "={{$env.N8N_VOICE_WEBHOOK_SECRET}}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "X-Webhook-Secret",
+              "value": "={{$env.N8N_VOICE_WEBHOOK_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { transcript: '[Voice memo pending STT — run stt/transcribe.py on audio file]', externalCallId: $('Build Payloads').item.json.captureId, kind: $('Build Payloads').item.json.bundle.captureOrigin === 'SITE_WALK' ? 'site-memo' : 'seller-call', captureId: $('Build Payloads').item.json.captureId, clientNotes: $('Build Payloads').item.json.bundle.clientNotes } }}",
-        "options": { "timeout": 120000 }
+        "jsonBody": "={{ { transcript: '', audioFileId: $('Build Payloads').item.json.bundle.audio?.fileId || null, pendingMediaId: $('Build Payloads').item.json.bundle.audio?.pendingMediaId || null, externalCallId: $('Build Payloads').item.json.captureId, kind: $('Build Payloads').item.json.bundle.captureOrigin === 'SITE_WALK' ? 'site-memo' : 'seller-call', captureId: $('Build Payloads').item.json.captureId, clientNotes: $('Build Payloads').item.json.bundle.clientNotes } }}",
+        "options": {
+          "timeout": 120000
+        }
       },
       "id": "c2000001-0010-4000-8000-000000000010",
       "name": "Trigger Voice Extraction",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2180, 200],
+      "position": [
+        2180,
+        200
+      ],
       "notes": "When STT is wired, POST real transcript here. For SITE_WALK captures, set kind=site-memo."
     },
     {
@@ -185,61 +237,159 @@
       "name": "Respond OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [2400, 300]
+      "position": [
+        2400,
+        300
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { ok: false, error: 'Unauthorized' } }}",
-        "options": { "responseCode": 401 }
+        "options": {
+          "responseCode": 401
+        }
       },
       "id": "c2000001-0012-4000-8000-000000000012",
       "name": "Respond Unauthorized",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [640, 520]
+      "position": [
+        640,
+        520
+      ]
     }
   ],
   "connections": {
     "Webhook: Bundle Submit": {
-      "main": [[{ "node": "Verify Secret", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Verify Secret",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Verify Secret": {
       "main": [
-        [{ "node": "Build Payloads", "type": "main", "index": 0 }],
-        [{ "node": "Respond Unauthorized", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Build Payloads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build Payloads": {
-      "main": [[{ "node": "Upsert Property", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Upsert Property",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Upsert Property": {
-      "main": [[{ "node": "Upsert Opportunity", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Upsert Opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Upsert Opportunity": {
-      "main": [[{ "node": "Upsert Note", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Upsert Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Upsert Note": {
-      "main": [[{ "node": "Upsert NoteTarget", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Upsert NoteTarget",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Upsert NoteTarget": {
-      "main": [[{ "node": "Upsert Inspection", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Upsert Inspection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Upsert Inspection": {
-      "main": [[{ "node": "Has Audio?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Has Audio?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Has Audio?": {
       "main": [
-        [{ "node": "Trigger Voice Extraction", "type": "main", "index": 0 }],
-        [{ "node": "Respond OK", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Trigger Voice Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Trigger Voice Extraction": {
-      "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "meta": {
     "description": "Phase 2 bundle submit for property-capture PWA. Writes Property, Opportunity, Note, PropertyInspection to Twenty; triggers voice extraction when audio present."
   }
