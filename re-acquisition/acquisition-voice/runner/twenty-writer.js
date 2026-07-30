@@ -1,63 +1,14 @@
-import { v5 as uuidv5 } from 'uuid';
-
-const NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
-
-export function deterministicId(seed, label) {
-  return uuidv5(`${seed}:${label}`, NAMESPACE);
-}
-
-function parseName(fullName) {
-  if (!fullName || typeof fullName !== 'object') return null;
-  if (fullName.firstName || fullName.lastName) return fullName;
-  if (typeof fullName === 'string') {
-    const parts = fullName.trim().split(/\s+/);
-    return {
-      firstName: parts[0] || '',
-      lastName: parts.slice(1).join(' ') || '',
-    };
-  }
-  return null;
-}
-
-function toAddress(addr) {
-  if (!addr) return null;
-  if (addr.addressStreet1) return addr;
-  return {
-    addressStreet1: addr.street1 || addr.addressStreet1 || '',
-    addressStreet2: addr.street2 || addr.addressStreet2 || null,
-    addressCity: addr.city || addr.addressCity || '',
-    addressState: addr.state || addr.addressState || '',
-    addressPostcode: addr.zip || addr.addressPostcode || '',
-    addressCountry: addr.country || addr.addressCountry || 'United States',
-  };
-}
-
-function toCurrency(value) {
-  if (value == null) return null;
-  const num = typeof value === 'object' ? value.value : value;
-  if (num == null || Number.isNaN(Number(num))) return null;
-  return {
-    amountMicros: Math.round(Number(num) * 1_000_000),
-    currencyCode: 'USD',
-  };
-}
-
-function toRichText(markdown) {
-  if (!markdown) return null;
-  return { markdown: String(markdown), blocknote: null };
-}
-
-function parsePhone(e164) {
-  if (!e164) return null;
-  const digits = e164.replace(/\D/g, '');
-  const national = digits.startsWith('1') ? digits.slice(1) : digits;
-  return {
-    primaryPhoneNumber: national,
-    primaryPhoneCountryCode: 'US',
-    primaryPhoneCallingCode: '+1',
-    additionalPhones: null,
-  };
-}
+import {
+  deterministicId,
+  resolvePropertyIdByApn,
+  seeds,
+  toAddress,
+  toCurrency,
+  toFullName,
+  toPhones,
+  toRichText,
+  unwrapRestRecord,
+} from '../../shared/twenty-writes.mjs';
 
 export class TwentyWriter {
   constructor({ apiUrl, apiKey }) {
@@ -91,7 +42,7 @@ export class TwentyWriter {
 
   async upsert(objectPlural, record) {
     const result = await this.request('POST', `/rest/${objectPlural}?upsert=true`, record);
-    return result.data?.[objectPlural.slice(0, -1)] ?? result.data ?? result;
+    return unwrapRestRecord(result, objectPlural);
   }
 
   async writeSellerCallExtraction(extraction, transcriptBody) {
@@ -100,19 +51,26 @@ export class TwentyWriter {
     const disposition = extraction.disposition || {};
 
     const address = toAddress(identity.propertyAddress);
-    const addressKey = address
-      ? `${address.addressStreet1}|${address.addressCity}|${address.addressState}|${address.addressPostcode}`
-      : callId;
 
-    const propertyId = deterministicId(addressKey, 'property');
-    const opportunityId = deterministicId(callId, 'opportunity');
+    // When the seller states an APN, an engine-promoted (parcel-seeded) record
+    // may already exist — reuse it instead of minting an address-seeded twin.
+    const existingByApn = await resolvePropertyIdByApn(
+      (path) => this.request('GET', path),
+      identity.apn?.value,
+    ).catch(() => null);
+    const propertyId =
+      existingByApn ??
+      deterministicId(
+        address ? seeds.propertyFromAddress(address) : seeds.labeled('property', callId),
+      );
+    const opportunityId = deterministicId(seeds.opportunity(callId));
     const personId = identity.leadPhoneE164
-      ? deterministicId(identity.leadPhoneE164, 'person')
+      ? deterministicId(seeds.personFromPhone(identity.leadPhoneE164))
       : identity.sellerFullName
-        ? deterministicId(JSON.stringify(parseName(identity.sellerFullName)), 'person')
+        ? deterministicId(seeds.personFromName(identity.sellerFullName))
         : null;
-    const transcriptId = deterministicId(callId, 'callTranscript');
-    const inspectionId = deterministicId(callId, 'inspection');
+    const transcriptId = deterministicId(seeds.labeled('callTranscript', callId));
+    const inspectionId = deterministicId(seeds.labeled('inspection', callId));
 
     const propertyPayload = {
       id: propertyId,
@@ -140,15 +98,15 @@ export class TwentyWriter {
 
     let person = null;
     if (personId) {
-      const name = parseName(identity.sellerFullName);
+      const name = toFullName(identity.sellerFullName);
       const personPayload = {
         id: personId,
         ...(name ? { name } : {}),
         ...(identity.sellerEmail
           ? { emails: { primaryEmail: identity.sellerEmail, additionalEmails: [] } }
           : {}),
-        ...(parsePhone(identity.leadPhoneE164)
-          ? { phones: parsePhone(identity.leadPhoneE164) }
+        ...(toPhones(identity.leadPhoneE164)
+          ? { phones: toPhones(identity.leadPhoneE164) }
           : {}),
       };
       person = await this.upsert('people', personPayload);
@@ -183,14 +141,14 @@ export class TwentyWriter {
 
     let note = null;
     if (noteParts.length) {
-      const noteId = deterministicId(callId, 'note');
+      const noteId = deterministicId(seeds.labeled('note', callId));
       note = await this.upsert('notes', {
         id: noteId,
         title: `Seller call notes — ${callId.slice(0, 8)}`,
         bodyV2: toRichText(noteParts.join('\n\n')),
       });
       await this.upsert('noteTargets', {
-        id: deterministicId(callId, 'noteTarget'),
+        id: deterministicId(seeds.labeled('noteTarget', callId)),
         noteId,
         targetOpportunityId: opportunity.id || opportunityId,
         ...(person ? { targetPersonId: person.id || personId } : {}),
@@ -199,7 +157,7 @@ export class TwentyWriter {
 
     let task = null;
     if (disposition.followUpCommitment) {
-      const taskId = deterministicId(callId, 'task');
+      const taskId = deterministicId(seeds.labeled('task', callId));
       task = await this.upsert('tasks', {
         id: taskId,
         title: disposition.followUpCommitment.slice(0, 255),
@@ -207,7 +165,7 @@ export class TwentyWriter {
         bodyV2: toRichText(`From seller call ${callId}`),
       });
       await this.upsert('taskTargets', {
-        id: deterministicId(callId, 'taskTarget'),
+        id: deterministicId(seeds.labeled('taskTarget', callId)),
         taskId,
         targetOpportunityId: opportunity.id || opportunityId,
       });

@@ -35,15 +35,26 @@ const toMicros = (dollars) => Math.round(Number(dollars) * 1_000_000);
 
 ## Deterministic ids
 
-```javascript
-import { v5 as uuidv5 } from 'uuid';
+**Canonical implementation: `re-acquisition/shared/twenty-writes.mjs`.** Import it
+(`uuidV5`, `seeds`, `deterministicId`, composite helpers, `unwrapRestRecord`) in
+Node writers; n8n Code nodes mirror the grammar inline and must be kept in sync.
 
-const NAMESPACE = process.env.UUID_NAMESPACE; // workspace-stable UUID
-const propertyId = uuidv5(normalizedAddress, NAMESPACE);
-const inspectionId = uuidv5(`${captureId}:inspection`, NAMESPACE);
-const attachmentId = uuidv5(`${captureId}:photo:0`, NAMESPACE);
-const contractAttachmentId = uuidv5(`${opportunityId}:contract:${contractType}`, NAMESPACE);
+Seed grammar (uuidv5 over the shared namespace):
+
 ```
+property:parcel:<parcelExternalId>     county-verified identity (lead engine)
+property:addr:<street|city|state|zip>  field-capture fallback, lowercased
+person:owner:<ownerExternalId>         engine registry identity
+person:phone:<e164>                    voice/capture identity
+person:name:<normalized full name>     last resort
+opportunity:<callId|captureId>
+<label>:<sourceId>                     callTranscript, inspection, note, task, targets
+```
+
+Parcel and address seeds never collide-match. When a capture-path writer knows
+the APN, look the property up by APN first (`resolvePropertyIdByApn`) instead of
+minting an address-seeded id — that is how capture data lands on engine-promoted
+records instead of duplicating them.
 
 Prefer explicit authorized `target.opportunityId` / `propertyId` when the client supplies them.
 

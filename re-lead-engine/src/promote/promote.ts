@@ -70,15 +70,21 @@ const buildPlanEntry = (
   candidate: PromotionCandidate,
   namespace: string,
 ): PromotionPlanEntry => {
-  const propertyId = uuidV5(candidate.parcel_external_id, namespace);
+  // Seed grammar is shared across all writers — see
+  // re-acquisition/shared/twenty-writes.mjs before changing these.
+  const propertyId = uuidV5(
+    `property:parcel:${candidate.parcel_external_id}`,
+    namespace,
+  );
   const personId =
     candidate.owner_external_id === null
       ? null
-      : uuidV5(candidate.owner_external_id, namespace);
+      : uuidV5(`person:owner:${candidate.owner_external_id}`, namespace);
 
+  // No `name` key: property's label identifier is propertyAddress; the REST
+  // API has no real name column to write (DRIFT.md).
   const propertyPayload: Record<string, unknown> = {
     id: propertyId,
-    name: candidate.situs_street ?? `${candidate.county_name} ${candidate.apn_raw}`,
     propertyAddress: buildAddress(
       candidate.situs_street,
       candidate.situs_city,
@@ -133,7 +139,10 @@ const buildPlanEntry = (
     candidate.latest_event_type === null
       ? null
       : {
-          id: uuidV5(`${candidate.parcel_external_id}:latest-distress`, namespace),
+          id: uuidV5(
+            `distressEvent:${candidate.parcel_external_id}:latest`,
+            namespace,
+          ),
           name: `${candidate.latest_event_type} ${candidate.latest_event_date ?? 'undated'}`,
           type: candidate.latest_event_type.toUpperCase(),
           eventDate: candidate.latest_event_date,
