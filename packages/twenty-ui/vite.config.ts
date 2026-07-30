@@ -89,7 +89,7 @@ export default defineConfig(({ command }) => {
       }),
       svgr(),
       dts(dtsConfig),
-      checker(checkersConfig),
+      ...(process.env.SKIP_CHECKER === '1' ? [] : [checker(checkersConfig)]),
       createWywProfilingPlugin(
         wyw({
           include: [path.resolve(__dirname, 'src') + '/**/*.{ts,tsx}'],

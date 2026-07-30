@@ -167,5 +167,39 @@ Want to go deeper? Read the <a href="https://docs.twenty.com/user-guide/introduc
 # Join the Community
 
 <p><a href="https://github.com/twentyhq/twenty"><img src="./packages/twenty-website/public/images/readme/star-icon.svg" width="12" height="12"/> Star the repo</a> · <a href="https://discord.gg/cx5n4Jzs57"><img src="./packages/twenty-website/public/images/readme/discord-icon.svg" width="12" height="12"/> Discord</a> · <a href="https://github.com/twentyhq/twenty/discussions"><img src="./packages/twenty-website/public/images/readme/message-icon.svg" width="12" height="12"/> Feature requests</a> · <a href="https://github.com/orgs/twentyhq/projects/1/views/35"><img src="./packages/twenty-website/public/images/readme/rocket-icon.svg" width="12" height="12"/> Releases</a> · <a href="https://twitter.com/twentycrm"><img src="./packages/twenty-website/public/images/readme/x-icon.svg" width="12" height="12"/> X</a> · <a href="https://www.linkedin.com/company/twenty/"><img src="./packages/twenty-website/public/images/readme/linkedin-icon.svg" width="12" height="12"/> LinkedIn</a> · <a href="https://twenty.crowdin.com/twenty"><img src="./packages/twenty-website/public/images/readme/language-icon.svg" width="12" height="12"/> Crowdin</a> · <a href="https://github.com/twentyhq/twenty/contribute"><img src="./packages/twenty-website/public/images/readme/code-icon.svg" width="12" height="12"/> Contribute</a></p>
-# Roofing_Moat_Tan_Man
-# Roofing_Moat_Tan_Man
+# RE Acquisition CRM (Twenty-20)
+
+This fork extends [Twenty CRM](https://twenty.com) for **real estate acquisition** — wholesale, flip, land, and commercial/industrial deals.
+
+## Product shell (recommended)
+
+Use **RE Acquisition Ops** for a private, localhost-only install:
+
+```bash
+./re-ops init
+./re-ops up
+./re-ops login-help
+# after creating a workspace API key in the CRM UI:
+./re-ops configure <TWENTY_API_KEY>
+```
+
+Docs: [`re-acquisition-ops/README.md`](re-acquisition-ops/README.md) · Privacy: [`re-acquisition-ops/PRIVACY.md`](re-acquisition-ops/PRIVACY.md)
+
+## Customization
+
+| Path | Purpose |
+|---|---|
+| [`re-acquisition-ops/`](re-acquisition-ops/) | One-command local product shell (privacy defaults, sidecars, media gateway) |
+| [`packages/twenty-apps/re-acquisition/`](packages/twenty-apps/re-acquisition/) | Twenty SDK app — custom objects, deal pipeline, views, logic functions |
+| [`re-acquisition/property-capture/`](re-acquisition/property-capture/) | Mobile capture → media-gateway / n8n → Twenty |
+| [`re-acquisition/acquisition-voice/`](re-acquisition/acquisition-voice/) | Seller call / site memo LLM extraction schemas |
+
+## Manual SDK publish (advanced)
+
+```bash
+cd packages/twenty-apps/re-acquisition
+cp .env.example .env.local   # set TWENTY_API_URL + TWENTY_API_KEY
+yarn install
+yarn twenty dev --once       # publish app
+yarn seed                    # demo deals
+```

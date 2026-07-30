@@ -24,7 +24,7 @@ export const MAIN_COLORS_DARK = {
   turquoise: RadixColors.tealDarkP3.teal9,
   cyan: RadixColors.cyanDarkP3.cyan9,
   sky: RadixColors.skyDarkP3.sky9,
-  blue: RadixColors.indigoDarkP3.indigo9,
+  blue: RadixColors.skyDarkP3.sky9,
 
   // Purples & Pinks
   iris: RadixColors.irisDarkP3.iris9,

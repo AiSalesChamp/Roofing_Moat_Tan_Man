@@ -3,6 +3,6 @@ import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomStat
 
 export const persistedColorSchemeState = createAtomState<ColorScheme>({
   key: 'persistedColorSchemeState',
-  defaultValue: 'System',
+  defaultValue: 'Dark',
   useLocalStorage: true,
 });

@@ -161,7 +161,10 @@ export class UserWorkspaceService extends TypeOrmQueryService<UserWorkspaceEntit
           firstName: user.firstName,
           lastName: user.lastName,
         },
-        colorScheme: 'System',
+        // Default to Dark rather than System: this workspace is configured
+        // as a dark-first CRM (see re-acquisition), so new members should
+        // land in dark mode instead of following the OS light theme.
+        colorScheme: 'Dark',
         userId: user.id,
         userEmail: user.email,
         avatarUrl: userWorkspace.defaultAvatarUrl ?? null,

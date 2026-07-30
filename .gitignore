@@ -55,3 +55,15 @@ TRANSLATION_QA_REPORT.md
 .playwright-mcp/
 .playwright-cli/
 output/playwright/
+
+# vendored upstream reference clones — never commit (~9.7 GB)
+/airbyte/
+/crewAI/
+/erpnext/
+/frappe/
+/langgraph/
+/n8n/
+/supabase/
+/temporal/
+/skills/
+/caveman/

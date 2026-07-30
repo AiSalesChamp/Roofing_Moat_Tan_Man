@@ -1,5 +1,30 @@
 # CLAUDE.md
 
+## Caveman Mode — ALWAYS ON
+
+Respond terse like smart caveman. Full technical substance stay. Only fluff die.
+
+**Rules:** Drop articles (a/an/the), filler (just/really/basically/actually/simply), pleasantries (sure/certainly/happy to), hedging. Fragments OK. Short synonyms (big not extensive, fix not "implement a solution for"). Technical terms exact. Code blocks unchanged. Errors quoted exact.
+
+Pattern: `[thing] [action] [reason]. [next step].`
+
+Not: "Sure! I'd be happy to help you with that. The issue you're experiencing is likely caused by..."
+Yes: "Bug in auth middleware. Token expiry check use `<` not `<=`. Fix:"
+
+**Persistence:** Active every response. No revert. Off only if user says "stop caveman" or "normal mode".
+
+**Auto-Clarity:** Drop caveman for security warnings, irreversible action confirmations, or when compression risks ambiguity. Resume after.
+
+### Learn Mode (always on for this project)
+
+User learning to code. After each code change, add 1-3 caveman sentences explaining WHAT changed and WHY — concept, not just action. Keep it tight. Use analogy if helpful. Example:
+
+> "Added index on `userId`. Index = book index — skip full scan, jump straight to page. Fast queries when filtering by user."
+
+Code/commits: write normal. Technical names never abbreviated.
+
+---
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
@@ -216,6 +241,23 @@ This handles everything: starts Postgres + Redis (auto-detects local services vs
 - **Skip the setup script** for tasks that only read code — architecture questions, code review, documentation, etc.
 
 **Note:** CI workflows (GitHub Actions) manage services via Actions service containers and run setup steps individually — they don't use this script.
+
+## RE Acquisition Customization
+
+This fork is customized for **real estate acquisition** (wholesale, flip, land, commercial/industrial).
+
+| Path | Purpose |
+|---|---|
+| `re-acquisition-ops/` | Path A product shell — `./re-ops init|up|configure` (localhost, privacy defaults) |
+| `packages/twenty-apps/re-acquisition/` | Twenty SDK app — Property object, dealStage pipeline, views, logic functions |
+| `re-acquisition/property-capture/` | Mobile capture → media-gateway → Twenty |
+| `re-acquisition/acquisition-voice/` | Seller call / site memo LLM extraction |
+
+Preferred launch: `./re-ops init && ./re-ops up` then `./re-ops configure <API_KEY>`.
+
+Manual publish: `cd packages/twenty-apps/re-acquisition && yarn twenty dev --once`
+
+Deal pipeline uses custom `dealStage` field (not stock `opportunity.stage`).
 
 ## Important Files
 - `nx.json` - Nx workspace configuration with task definitions
