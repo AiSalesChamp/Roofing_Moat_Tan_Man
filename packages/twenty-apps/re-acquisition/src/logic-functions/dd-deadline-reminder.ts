@@ -28,7 +28,7 @@ const handler = async () => {
   let remindersCreated = 0;
 
   for (const { node } of deals) {
-    await client.mutation({
+    const created = await client.mutation({
       createTask: {
         __args: {
           data: {
@@ -40,18 +40,7 @@ const handler = async () => {
       },
     } as any);
 
-    const taskResult = await client.query({
-      tasks: {
-        __args: {
-          filter: { title: { eq: `DD deadline in 3 days — ${node.name}` } },
-          first: 1,
-          orderBy: [{ createdAt: 'Desc' }],
-        },
-        edges: { node: { id: true } },
-      },
-    } as any);
-
-    const taskId = (taskResult.tasks as any).edges[0]?.node?.id;
+    const taskId = (created as any).createTask?.id;
     if (taskId) {
       await client.mutation({
         createTaskTarget: {

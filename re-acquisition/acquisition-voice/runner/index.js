@@ -48,7 +48,7 @@ async function main() {
 
   if (args.dryRun || args.skipCrm) {
     console.log(JSON.stringify(extraction, null, 2));
-    if (args.skipCrm) return;
+    return;
   }
 
   const writer = new TwentyWriter({});

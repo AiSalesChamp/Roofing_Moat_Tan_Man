@@ -62,7 +62,7 @@ const handler = async (payload: DatabaseEventPayload) => {
   const client = new CoreApiClient();
 
   for (const title of tasks) {
-    await client.mutation({
+    const created = await client.mutation({
       createTask: {
         __args: {
           data: {
@@ -74,18 +74,7 @@ const handler = async (payload: DatabaseEventPayload) => {
       },
     } as any);
 
-    const taskResult = await client.query({
-      tasks: {
-        __args: {
-          filter: { title: { eq: `[${props.after.dealStage}] ${title} — ${dealName}` } },
-          first: 1,
-          orderBy: [{ createdAt: 'Desc' }],
-        },
-        edges: { node: { id: true } },
-      },
-    } as any);
-
-    const taskId = (taskResult.tasks as any).edges[0]?.node?.id;
+    const taskId = (created as any).createTask?.id;
     if (taskId) {
       await client.mutation({
         createTaskTarget: {

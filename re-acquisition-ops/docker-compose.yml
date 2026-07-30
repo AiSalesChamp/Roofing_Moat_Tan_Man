@@ -40,6 +40,9 @@ services:
       N8N_VERSION_NOTIFICATIONS_ENABLED: 'false'
       N8N_PERSONALIZATION_ENABLED: 'false'
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      # Workflow Code nodes use require('uuid') and require('crypto')
+      NODE_FUNCTION_ALLOW_EXTERNAL: uuid
+      NODE_FUNCTION_ALLOW_BUILTIN: crypto
       TWENTY_API_URL: ${TWENTY_API_URL_FROM_DOCKER:-http://host.docker.internal:3000}
       TWENTY_API_KEY: ${TWENTY_API_KEY:-}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL_FROM_DOCKER:-http://host.docker.internal:11434}

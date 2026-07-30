@@ -155,7 +155,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:5678/webhook/re-voice/extract",
+        "url": "={{ ($env.WEBHOOK_URL || 'http://localhost:5678') + '/webhook/re-voice/extract' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
