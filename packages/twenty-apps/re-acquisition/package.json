@@ -12,7 +12,8 @@
     "twenty": "twenty",
     "lint": "oxlint -c .oxlintrc.json .",
     "lint:fix": "oxlint --fix -c .oxlintrc.json .",
-    "seed": "tsx src/scripts/seed.ts"
+    "seed": "tsx src/scripts/seed.ts",
+    "test": "tsx --test src/underwriting/mao-engine.test.ts"
   },
   "dependencies": {
     "twenty-client-sdk": "2.4.0",
