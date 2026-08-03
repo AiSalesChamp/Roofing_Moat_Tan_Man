@@ -169,12 +169,6 @@ export class FieldLoopStore {
     return id;
   }
 
-  hasEvalEvent(draftId) {
-    return !!this.db
-      .prepare(`SELECT id FROM eval_events WHERE draft_id = ? LIMIT 1`)
-      .get(draftId);
-  }
-
   listEvalEvents({ limit = 1000 } = {}) {
     return this.db
       .prepare(`SELECT * FROM eval_events ORDER BY created_at DESC LIMIT ?`)

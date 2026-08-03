@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { commitDraft, writeSiteMemoExtraction, twentyConfigured } from '../server/commit.js';
+import { commitDraft, twentyConfigured } from '../server/commit.js';
+import { writeSiteMemoExtraction } from '../../acquisition-voice/runner/twenty-writer.js';
 
 class RecordingWriter {
   constructor() {

@@ -6,7 +6,7 @@
 
 import { createServer } from 'node:http';
 import { readFileSync, existsSync, statSync } from 'node:fs';
-import { join, dirname, resolve, normalize, extname } from 'node:path';
+import { join, dirname, resolve, normalize, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { FieldLoopStore } from './store.js';
@@ -130,10 +130,17 @@ export function createFieldLoopServer({
     }
 
     if (autonomy.decision === 'auto_commit') {
-      const graded = gradeExtractions(extraction, extraction);
-      store.logEvalEvent({ draftId: draft.id, kind, action: 'auto_commit', fields: graded });
       try {
         const commitResult = await commitDraft(draft, { env, writerFactory });
+        // Audit event logged only AFTER a successful commit: a failed
+        // auto-commit leaves the draft 'failed' with NO event, so a later
+        // human confirm still enters the eval log normally.
+        store.logEvalEvent({
+          draftId: draft.id,
+          kind,
+          action: 'auto_commit',
+          fields: gradeExtractions(extraction, extraction),
+        });
         const resolved = store.resolveDraft(draft.id, {
           status: 'auto_committed',
           finalExtraction: extraction,
@@ -166,21 +173,20 @@ export function createFieldLoopServer({
     const graded = gradeExtractions(draft.extraction, finalExtraction);
     const edited = graded.some((g) => g.status !== 'confirmed');
 
-    // A failed-commit retry must not double-count the human's judgment.
-    if (!store.hasEvalEvent(draft.id)) {
+    try {
+      const commitResult = await commitDraft(
+        { ...draft, finalExtraction },
+        { env, writerFactory },
+      );
+      // Eval logged only on successful resolution: exactly one event per
+      // draft (a confirmed draft cannot be re-confirmed), and a failed-commit
+      // retry grades the human's LATEST edits, not the first attempt's.
       store.logEvalEvent({
         draftId: draft.id,
         kind: draft.kind,
         action: edited ? 'confirm_edited' : 'confirm',
         fields: graded,
       });
-    }
-
-    try {
-      const commitResult = await commitDraft(
-        { ...draft, finalExtraction },
-        { env, writerFactory },
-      );
       const resolved = store.resolveDraft(draft.id, {
         status: 'confirmed',
         finalExtraction,
@@ -204,9 +210,8 @@ export function createFieldLoopServer({
       ...g,
       status: 'discarded',
     }));
-    if (!store.hasEvalEvent(draft.id)) {
-      store.logEvalEvent({ draftId: draft.id, kind: draft.kind, action: 'discard', fields: graded });
-    }
+    // Discard resolves immediately; the status change guarantees one event.
+    store.logEvalEvent({ draftId: draft.id, kind: draft.kind, action: 'discard', fields: graded });
     const resolved = store.resolveDraft(draft.id, {
       status: 'discarded',
       resolvedBy: body.resolvedBy || 'human',
@@ -284,8 +289,11 @@ export function createFieldLoopServer({
       }
       if (!pathname.startsWith(`${mount.prefix}/`)) continue;
       const rel = pathname.slice(mount.prefix.length + 1) || mount.index;
-      const filePath = normalize(resolve(mount.root, rel));
-      if (!filePath.startsWith(resolve(mount.root))) {
+      const rootResolved = resolve(mount.root);
+      const filePath = normalize(resolve(rootResolved, rel));
+      // Separator-boundary check: bare startsWith would also admit sibling
+      // directories whose names merely extend the root as a string prefix.
+      if (filePath !== rootResolved && !filePath.startsWith(rootResolved + sep)) {
         res.writeHead(403).end('Forbidden');
         return true;
       }

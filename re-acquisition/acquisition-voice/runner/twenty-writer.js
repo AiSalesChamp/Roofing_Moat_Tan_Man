@@ -10,6 +10,87 @@ import {
   unwrapRestRecord,
 } from '../../shared/twenty-writes.mjs';
 
+// Site-memo → Twenty write per twenty-field-mapping.md §"Site Memo → Twenty".
+// Standalone (writer passed in) so tests can drive it with a recording fake.
+// Same seed grammar as seller calls: a memo and a call about the same parcel
+// land on the same Property.
+export async function writeSiteMemoExtraction(writer, extraction, memoBody) {
+  const memoId = extraction.extractionMeta?.externalMemoId || 'unknown-memo';
+  const identity = extraction.identity || {};
+  const findings = extraction.siteFindings || {};
+
+  const address = toAddress(identity.propertyAddress);
+  const existingByApn = await resolvePropertyIdByApn(
+    (path) => writer.request('GET', path),
+    identity.apn?.value,
+  ).catch(() => null);
+  const propertyId =
+    existingByApn ??
+    deterministicId(
+      address ? seeds.propertyFromAddress(address) : seeds.labeled('property', memoId),
+    );
+  const opportunityId = deterministicId(seeds.opportunity(memoId));
+  const inspectionId = deterministicId(seeds.labeled('inspection', memoId));
+
+  const property = await writer.upsert('properties', {
+    id: propertyId,
+    ...(address ? { propertyAddress: address } : {}),
+    ...(identity.apn?.value ? { apn: identity.apn.value } : {}),
+    ...(identity.propertyClass ? { propertyClass: identity.propertyClass } : {}),
+  });
+
+  const oppName = address?.addressStreet1
+    ? `${address.addressStreet1} — Site memo`
+    : `Site memo ${memoId.slice(0, 8)}`;
+  const estimatedValue = toCurrency(findings.estimatedValue);
+  const opportunity = await writer.upsert('opportunities', {
+    id: opportunityId,
+    name: oppName,
+    propertyId: property.id || propertyId,
+    ...(address ? { propertyAddress: address } : {}),
+    dealStage: findings.offerIntent === true ? 'OFFER_OUT' : 'QUALIFYING',
+    ...(estimatedValue ? { askingPrice: estimatedValue } : {}),
+  });
+
+  const summaryParts = [];
+  if (findings.findingsSummary) summaryParts.push(findings.findingsSummary);
+  if (findings.accessNotes) summaryParts.push(`**Access:** ${findings.accessNotes}`);
+  if (findings.occupancyObserved) summaryParts.push(`**Occupancy:** ${findings.occupancyObserved}`);
+  if (findings.zoningNotes) summaryParts.push(`**Zoning:** ${findings.zoningNotes}`);
+  if (findings.environmentalRedFlags?.length) {
+    summaryParts.push(`**Env. red flags:** ${findings.environmentalRedFlags.join(', ')}`);
+  }
+  const inspection = await writer.upsert('propertyInspections', {
+    id: inspectionId,
+    inspectionType: findings.inspectionType || 'SITE_WALK',
+    ...(findings.conditionRating ? { conditionRating: findings.conditionRating } : {}),
+    findingsSummary: toRichText(summaryParts.join('\n\n') || memoBody),
+    propertyId: property.id || propertyId,
+    inspectionOpportunityId: opportunity.id || opportunityId,
+  });
+
+  const compIds = [];
+  for (const [index, comp] of (findings.compsMentioned || []).entries()) {
+    const compId = deterministicId(seeds.labeled(`comparableSale:${index}`, memoId));
+    const salePrice = toCurrency(comp.salePrice ?? comp.price);
+    await writer.upsert('comparableSales', {
+      id: compId,
+      name: comp.address || comp.description || `Comp ${index + 1} — ${memoId.slice(0, 8)}`,
+      ...(salePrice ? { salePrice } : {}),
+      ...(comp.saleDate ? { saleDate: comp.saleDate } : {}),
+      compPropertyId: property.id || propertyId,
+    });
+    compIds.push(compId);
+  }
+
+  return {
+    propertyId: property.id || propertyId,
+    opportunityId: opportunity.id || opportunityId,
+    propertyInspectionId: inspection.id || inspectionId,
+    comparableSaleIds: compIds,
+  };
+}
+
 export class TwentyWriter {
   constructor({ apiUrl, apiKey }) {
     this.apiUrl = (apiUrl || process.env.TWENTY_API_URL || 'http://localhost:3000').replace(/\/$/, '');
@@ -43,6 +124,10 @@ export class TwentyWriter {
   async upsert(objectPlural, record) {
     const result = await this.request('POST', `/rest/${objectPlural}?upsert=true`, record);
     return unwrapRestRecord(result, objectPlural);
+  }
+
+  async writeSiteMemoExtraction(extraction, memoBody) {
+    return writeSiteMemoExtraction(this, extraction, memoBody);
   }
 
   async writeSellerCallExtraction(extraction, transcriptBody) {

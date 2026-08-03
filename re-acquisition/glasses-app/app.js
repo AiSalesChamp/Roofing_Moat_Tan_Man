@@ -15,6 +15,10 @@ const state = {
   screen: 'HOME', // HOME | LIST | CARD | RESULT
   drafts: [],
   listIndex: 0,
+  // Pinned when a CARD opens: the background poll may reorder/replace
+  // state.drafts while the user is reading, so confirm/discard must act on
+  // the draft that is ON SCREEN, never on a list index.
+  activeDraft: null,
   fieldOffset: 0,
   actionIndex: 0, // 0 confirm, 1 skip, 2 discard
   result: null,
@@ -99,7 +103,7 @@ function render() {
   }
 
   if (state.screen === 'CARD') {
-    const draft = state.drafts[state.listIndex];
+    const draft = state.activeDraft;
     if (!draft) {
       state.screen = 'LIST';
       return render();
@@ -143,9 +147,10 @@ function render() {
 }
 
 async function fireAction() {
-  const draft = state.drafts[state.listIndex];
+  const draft = state.activeDraft;
   const action = ACTIONS[state.actionIndex].key;
   if (action === 'skip') {
+    state.activeDraft = null;
     state.screen = 'LIST';
     return render();
   }
@@ -163,10 +168,12 @@ async function fireAction() {
       });
       state.result = { ok: true, message: 'Draft discarded' };
     }
-    state.drafts.splice(state.listIndex, 1);
+    state.drafts = state.drafts.filter((d) => d.id !== draft.id);
+    state.listIndex = Math.min(state.listIndex, Math.max(0, state.drafts.length - 1));
   } catch (err) {
     state.result = { ok: false, message: err.message };
   }
+  state.activeDraft = null;
   state.screen = 'RESULT';
   render();
 }
@@ -182,18 +189,22 @@ onInput((action) => {
     else if (action === 'down') state.listIndex = Math.min(state.drafts.length - 1, state.listIndex + 1);
     else if (action === 'select') {
       state.screen = 'CARD';
+      state.activeDraft = state.drafts[state.listIndex] || null;
       state.fieldOffset = 0;
       state.actionIndex = 0;
     } else if (action === 'back' || action === 'left') state.screen = 'HOME';
   } else if (state.screen === 'CARD') {
-    const draft = state.drafts[state.listIndex];
+    const draft = state.activeDraft;
     const maxOffset = Math.max(0, (draft?.fields.length || 0) - FIELDS_PER_PAGE);
     if (action === 'up') state.fieldOffset = Math.max(0, state.fieldOffset - 1);
     else if (action === 'down') state.fieldOffset = Math.min(maxOffset, state.fieldOffset + 1);
     else if (action === 'left') state.actionIndex = Math.max(0, state.actionIndex - 1);
     else if (action === 'right') state.actionIndex = Math.min(ACTIONS.length - 1, state.actionIndex + 1);
     else if (action === 'select') return fireAction();
-    else if (action === 'back') state.screen = 'LIST';
+    else if (action === 'back') {
+      state.activeDraft = null;
+      state.screen = 'LIST';
+    }
   } else if (state.screen === 'RESULT') {
     if (action === 'select' || action === 'back') {
       state.screen = state.drafts.length ? 'LIST' : 'HOME';

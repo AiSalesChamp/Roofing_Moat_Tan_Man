@@ -198,7 +198,7 @@ test('autonomy ratchet: low-risk drafts auto-commit after 20 clean confirms; hig
   assert.equal(paused.json.decision, 'pending');
 });
 
-test('failed commit → 502 + failed status; retry succeeds without double-counting the eval', async (t) => {
+test('failed commit → 502, no eval logged; retry with NEW edits grades the retry, once', async (t) => {
   let failures = 1;
   const writer = new FakeWriter();
   const originalWrite = writer.writeSellerCallExtraction.bind(writer);
@@ -208,19 +208,88 @@ test('failed commit → 502 + failed status; retry succeeds without double-count
   };
   const { call, store } = await startLoop(t, { writer });
 
+  const original = sellerExtraction('flaky-1');
   const { json: created } = await call('POST', '/api/drafts', {
     kind: 'seller-call',
     sourceId: 'flaky-1',
-    extraction: sellerExtraction('flaky-1'),
+    extraction: original,
   });
   const first = await call('POST', `/api/drafts/${created.draft.id}/confirm`, {});
   assert.equal(first.status, 502);
   assert.equal(store.getDraft(created.draft.id).status, 'failed');
+  assert.equal(store.listEvalEvents().length, 0, 'failed commit logs nothing');
 
-  const retry = await call('POST', `/api/drafts/${created.draft.id}/confirm`, {});
+  // The human edits differently on the retry — the log must reflect THAT.
+  const edited = structuredClone(original);
+  edited.disposition.timelineToSell = 'two months';
+  const retry = await call('POST', `/api/drafts/${created.draft.id}/confirm`, {
+    extraction: edited,
+  });
   assert.equal(retry.status, 200);
   assert.equal(retry.json.draft.status, 'confirmed');
-  assert.equal(store.listEvalEvents().length, 1, 'one human judgment = one eval event');
+  const events = store.listEvalEvents();
+  assert.equal(events.length, 1, 'one human judgment = one eval event');
+  assert.equal(events[0].action, 'confirm_edited');
+  const timeline = events[0].fields.find((f) => f.path === 'disposition.timelineToSell');
+  assert.equal(timeline.status, 'corrected', 'retry grading reflects the latest edits');
+});
+
+test('failed auto-commit leaves no eval event, so a later human confirm still gets graded', async (t) => {
+  const writer = new FakeWriter();
+  const { call, store } = await startLoop(t, { writer });
+
+  // Earn autonomy for the low-risk fields.
+  for (let i = 0; i < 20; i++) {
+    const { json } = await call('POST', '/api/drafts', {
+      kind: 'seller-call',
+      sourceId: `earn-${i}`,
+      extraction: sellerExtraction(`earn-${i}`),
+    });
+    await call('POST', `/api/drafts/${json.draft.id}/confirm`, {});
+  }
+
+  // Twenty goes down exactly when an auto-commit fires.
+  const originalWrite = writer.writeSellerCallExtraction.bind(writer);
+  writer.writeSellerCallExtraction = async () => {
+    throw new Error('Twenty is down');
+  };
+  const failed = await call('POST', '/api/drafts', {
+    kind: 'seller-call',
+    sourceId: 'auto-fail-1',
+    extraction: sellerExtraction('auto-fail-1'),
+  });
+  assert.equal(failed.json.decision, 'auto_commit_failed');
+  assert.equal(failed.json.draft.status, 'failed');
+  assert.equal(
+    store.listEvalEvents().filter((e) => e.action === 'auto_commit').length,
+    0,
+    'failed auto-commit must not log an audit event',
+  );
+
+  // Twenty recovers; the human reviews the failed draft — their judgment
+  // must enter the ratchet (this was silently dropped before the fix).
+  writer.writeSellerCallExtraction = originalWrite;
+  const confirmed = await call('POST', `/api/drafts/${failed.json.draft.id}/confirm`, {});
+  assert.equal(confirmed.status, 200);
+  assert.equal(store.listGradedEvents().length, 21, 'human confirm after failed auto-commit is graded');
+});
+
+test('static mounts refuse path traversal on raw (non-normalized) request paths', async (t) => {
+  const { base } = await startLoop(t);
+  const { port } = new URL(base);
+  const raw = await new Promise((resolvePromise, reject) => {
+    const socket = (async () => (await import('node:net')).connect(Number(port), '127.0.0.1'))();
+    socket.then((s) => {
+      let data = '';
+      s.on('data', (chunk) => (data += chunk));
+      s.on('end', () => resolvePromise(data));
+      s.on('error', reject);
+      s.end('GET /glasses/../server/store.js HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n');
+    }, reject);
+  });
+  const statusLine = raw.split('\r\n')[0];
+  assert.ok(!/200/.test(statusLine), `traversal must not return 200 (got: ${statusLine})`);
+  assert.ok(!raw.includes('FieldLoopStore'), 'server source must not leak');
 });
 
 test('missing TWENTY_API_KEY: confirm resolves locally with a recorded skip', async (t) => {

@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { extractWithOllama } from './ollama.js';
 import { validateExtraction } from './validate.js';
-import { TwentyWriter } from './twenty-writer.js';
+import { TwentyWriter, writeSiteMemoExtraction } from './twenty-writer.js';
 import { submitDraft } from './draft-client.js';
 
 function parseArgs(argv) {
@@ -67,7 +67,10 @@ async function main() {
 
   if (args.direct) {
     const writer = new TwentyWriter({});
-    const result = await writer.writeSellerCallExtraction(extraction, transcriptBody);
+    const result =
+      args.kind === 'site-memo'
+        ? await writeSiteMemoExtraction(writer, extraction, transcriptBody)
+        : await writer.writeSellerCallExtraction(extraction, transcriptBody);
     console.log('Twenty CRM upsert complete:', JSON.stringify(result, null, 2));
     return;
   }

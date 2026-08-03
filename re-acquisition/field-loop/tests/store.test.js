@@ -62,17 +62,15 @@ test('listDrafts filters by status and rejects unknown statuses', (t) => {
   assert.throws(() => store.listDrafts({ status: 'bogus' }));
 });
 
-test('eval log: append, dedupe guard, and graded-events filter', (t) => {
+test('eval log: append and graded-events filter', (t) => {
   const store = freshStore(t);
   const { draft } = store.createDraft({ kind: 'seller-call', sourceId: 'call-1', extraction });
-  assert.equal(store.hasEvalEvent(draft.id), false);
   store.logEvalEvent({
     draftId: draft.id,
     kind: 'seller-call',
     action: 'confirm',
     fields: [{ path: 'disposition.timelineToSell', status: 'confirmed' }],
   });
-  assert.equal(store.hasEvalEvent(draft.id), true);
   store.logEvalEvent({ draftId: 'other', kind: 'seller-call', action: 'discard', fields: [] });
   store.logEvalEvent({ draftId: 'auto', kind: 'seller-call', action: 'auto_commit', fields: [] });
 
