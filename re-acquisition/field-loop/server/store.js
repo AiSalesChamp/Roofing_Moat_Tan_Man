@@ -134,6 +134,7 @@ export class FieldLoopStore {
     const statuses = status
       ? String(status).split(',').map((s) => s.trim()).filter(Boolean)
       : null;
+    if (statuses && !statuses.length) throw new Error(`Unknown status: ${status}`);
     for (const s of statuses || []) {
       if (!DRAFT_STATUSES.has(s)) throw new Error(`Unknown status: ${s}`);
     }

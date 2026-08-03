@@ -72,9 +72,12 @@ export function parseFieldInput(originalValue, text) {
 export const displayValue = (value) =>
   Array.isArray(value) ? value.join(', ') : value === null || value === undefined ? '' : String(value);
 
-// Rebuild the final extraction from the card's inputs.
+// Rebuild the final extraction from the card's inputs. The base must match
+// what the card RENDERS: failed drafts render finalExtraction (edits already
+// saved by the failed commit), so rebuilding from draft.extraction would
+// silently drop those edits on retry.
 export function buildEditedExtraction(draft, container) {
-  const extraction = deepClone(draft.extraction);
+  const extraction = deepClone(draft.finalExtraction || draft.extraction);
   let edited = false;
   container.querySelectorAll('input[data-path]').forEach((input) => {
     const path = input.dataset.path;

@@ -59,7 +59,10 @@ test('listDrafts filters by status and rejects unknown statuses', (t) => {
   store.resolveDraft(a.id, { status: 'discarded' });
   assert.equal(store.listDrafts({ status: 'pending' }).length, 1);
   assert.equal(store.listDrafts({ status: 'discarded' }).length, 1);
+  assert.equal(store.listDrafts({ status: 'pending,discarded' }).length, 2);
   assert.throws(() => store.listDrafts({ status: 'bogus' }));
+  assert.throws(() => store.listDrafts({ status: ',' }), /Unknown status/, 'empty list must not bypass the filter');
+  assert.throws(() => store.listDrafts({ status: 'pending,bogus' }));
 });
 
 test('eval log: append and graded-events filter', (t) => {
