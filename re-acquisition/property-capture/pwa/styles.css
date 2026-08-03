@@ -308,3 +308,12 @@ button.record.recording { background: #e33; animation: pulse 1s infinite; }
 
 .pipe-price { color: var(--ok); font-size: 0.78rem; }
 .pipe-more { color: var(--muted); font-size: 0.75rem; padding-top: 4px; }
+
+.draft-error {
+  margin: 8px 0 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #422;
+  color: var(--danger);
+  font-size: 13px;
+}

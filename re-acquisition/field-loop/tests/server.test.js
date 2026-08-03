@@ -274,6 +274,63 @@ test('failed auto-commit leaves no eval event, so a later human confirm still ge
   assert.equal(store.listGradedEvents().length, 21, 'human confirm after failed auto-commit is graded');
 });
 
+test('review clients see failed drafts: status=pending,failed lists both', async (t) => {
+  let failures = 1;
+  const writer = new FakeWriter();
+  const originalWrite = writer.writeSellerCallExtraction.bind(writer);
+  writer.writeSellerCallExtraction = async (...args) => {
+    if (failures-- > 0) throw new Error('Twenty is down');
+    return originalWrite(...args);
+  };
+  const { call } = await startLoop(t, { writer });
+
+  const a = await call('POST', '/api/drafts', {
+    kind: 'seller-call',
+    sourceId: 'multi-a',
+    extraction: sellerExtraction('multi-a'),
+  });
+  await call('POST', `/api/drafts/${a.json.draft.id}/confirm`, {}); // fails → 'failed'
+  await call('POST', '/api/drafts', {
+    kind: 'seller-call',
+    sourceId: 'multi-b',
+    extraction: sellerExtraction('multi-b'),
+  });
+
+  const both = await call('GET', '/api/drafts?status=pending,failed');
+  assert.equal(both.status, 200);
+  assert.deepEqual(both.json.drafts.map((d) => d.status).sort(), ['failed', 'pending']);
+  const bogus = await call('GET', '/api/drafts?status=pending,bogus');
+  assert.equal(bogus.status, 500);
+});
+
+test('discard after a failed edited confirm preserves the edits in the audit event', async (t) => {
+  const writer = new FakeWriter();
+  writer.writeSellerCallExtraction = async () => {
+    throw new Error('Twenty is down');
+  };
+  const { call, store } = await startLoop(t, { writer });
+
+  const original = sellerExtraction('edit-then-discard');
+  const { json: created } = await call('POST', '/api/drafts', {
+    kind: 'seller-call',
+    sourceId: 'edit-then-discard',
+    extraction: original,
+  });
+  const edited = structuredClone(original);
+  edited.disposition.timelineToSell = 'never actually selling';
+  const failed = await call('POST', `/api/drafts/${created.draft.id}/confirm`, {
+    extraction: edited,
+  });
+  assert.equal(failed.status, 502);
+
+  const discarded = await call('POST', `/api/drafts/${created.draft.id}/discard`, {});
+  assert.equal(discarded.status, 200);
+  const event = store.listEvalEvents().find((e) => e.action === 'discard');
+  const timeline = event.fields.find((f) => f.path === 'disposition.timelineToSell');
+  assert.equal(timeline.final, 'never actually selling', 'audit keeps the operator edits');
+  assert.equal(timeline.status, 'discarded');
+});
+
 test('static mounts refuse path traversal on raw (non-normalized) request paths', async (t) => {
   const { base } = await startLoop(t);
   const { port } = new URL(base);

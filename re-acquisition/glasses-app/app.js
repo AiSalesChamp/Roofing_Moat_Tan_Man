@@ -53,7 +53,8 @@ async function api(path, options = {}) {
 
 async function refreshDrafts() {
   try {
-    const { drafts } = await api('/api/drafts?status=pending');
+    // failed drafts stay reviewable: confirm = retry the CRM commit
+    const { drafts } = await api('/api/drafts?status=pending,failed');
     state.drafts = drafts;
     state.online = true;
     if (state.listIndex >= drafts.length) state.listIndex = Math.max(0, drafts.length - 1);
@@ -94,7 +95,7 @@ function render() {
         (d, i) => `
       <div class="list-item${i === state.listIndex ? ' selected' : ''}">
         ${esc(draftTitle(d))}
-        <div class="sub">${d.kind === 'site-memo' ? 'site memo' : 'seller call'} · ${d.fields.length} fields</div>
+        <div class="sub">${d.kind === 'site-memo' ? 'site memo' : 'seller call'} · ${d.fields.length} fields${d.status === 'failed' ? ' · RETRY' : ''}</div>
       </div>`,
       )
       .join('');
@@ -112,7 +113,9 @@ function render() {
     const more = draft.fields.length - state.fieldOffset - page.length;
     $screen.innerHTML = `
       <div class="card-title">${esc(draftTitle(draft))}</div>
-      <div class="card-sub">${draft.kind === 'site-memo' ? 'Site memo' : 'Seller call'} draft</div>
+      <div class="card-sub">${draft.kind === 'site-memo' ? 'Site memo' : 'Seller call'} draft${
+        draft.status === 'failed' ? ' — commit failed, confirm to retry' : ''
+      }</div>
       <div class="card-fields">
         ${page
           .map(

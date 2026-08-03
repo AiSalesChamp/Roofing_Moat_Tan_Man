@@ -129,11 +129,21 @@ export class FieldLoopStore {
   }
 
   listDrafts({ status, limit = 100 } = {}) {
-    if (status && !DRAFT_STATUSES.has(status)) throw new Error(`Unknown status: ${status}`);
-    const rows = status
+    // status accepts a comma-separated list, e.g. 'pending,failed' — review
+    // clients need failed drafts too (they are confirm-retryable).
+    const statuses = status
+      ? String(status).split(',').map((s) => s.trim()).filter(Boolean)
+      : null;
+    for (const s of statuses || []) {
+      if (!DRAFT_STATUSES.has(s)) throw new Error(`Unknown status: ${s}`);
+    }
+    const rows = statuses?.length
       ? this.db
-          .prepare(`SELECT * FROM drafts WHERE status = ? ORDER BY created_at DESC LIMIT ?`)
-          .all(status, limit)
+          .prepare(
+            `SELECT * FROM drafts WHERE status IN (${statuses.map(() => '?').join(',')})
+             ORDER BY created_at DESC LIMIT ?`,
+          )
+          .all(...statuses, limit)
       : this.db.prepare(`SELECT * FROM drafts ORDER BY created_at DESC LIMIT ?`).all(limit);
     return rows.map(rowToDraft);
   }

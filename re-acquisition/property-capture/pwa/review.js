@@ -29,8 +29,9 @@ async function api(path, { method = 'GET', body } = {}) {
   return json;
 }
 
+// Includes failed drafts: they stay reviewable and confirm = retry.
 export const listPendingDrafts = () =>
-  api('/api/drafts?status=pending').then((r) => r.drafts);
+  api('/api/drafts?status=pending,failed').then((r) => r.drafts);
 export const confirmDraft = (id, extraction) =>
   api(`/api/drafts/${id}/confirm`, { method: 'POST', body: extraction ? { extraction } : {} });
 export const discardDraft = (id) =>
@@ -100,6 +101,7 @@ export function draftTitle(draft) {
 export function renderDraftCard(draft) {
   const kindLabel = draft.kind === 'site-memo' ? 'Site memo' : 'Seller call';
   const when = new Date(draft.createdAt).toLocaleString();
+  const failed = draft.status === 'failed';
   const rows = draft.fields
     .map(
       (f) => `
@@ -121,11 +123,12 @@ export function renderDraftCard(draft) {
           <div class="addr">${esc(draftTitle(draft))}</div>
           <div class="meta">${kindLabel} · ${esc(when)}</div>
         </div>
-        <span class="badge PENDING">DRAFT</span>
+        <span class="badge ${failed ? 'FAILED' : 'PENDING'}">${failed ? 'RETRY' : 'DRAFT'}</span>
       </div>
+      ${failed && draft.error ? `<div class="draft-error">Commit failed: ${esc(draft.error)}</div>` : ''}
       ${rows || '<p class="draft-empty">No extracted fields.</p>'}
       <div class="draft-actions">
-        <button type="button" class="btn primary confirm-draft-btn">Confirm → CRM</button>
+        <button type="button" class="btn primary confirm-draft-btn">${failed ? 'Retry → CRM' : 'Confirm → CRM'}</button>
         <button type="button" class="btn danger discard-draft-btn">Discard</button>
       </div>
     </div>`;

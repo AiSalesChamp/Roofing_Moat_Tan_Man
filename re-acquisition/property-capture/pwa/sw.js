@@ -1,4 +1,4 @@
-const CACHE = 're-capture-v3';
+const CACHE = 're-capture-v4';
 // Relative to the SW scope: the PWA is served at '/' standalone but at
 // '/app/' behind the field-loop sidecar — absolute paths would precache the
 // wrong origin-root URLs (and 404 the install) under the mount.

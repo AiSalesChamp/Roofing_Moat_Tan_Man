@@ -206,10 +206,12 @@ export function createFieldLoopServer({
     if (!['pending', 'failed'].includes(draft.status)) {
       throw httpError(409, `Draft is ${draft.status}, not discardable`);
     }
-    const graded = gradeExtractions(draft.extraction, draft.extraction).map((g) => ({
-      ...g,
-      status: 'discarded',
-    }));
+    // A failed confirm may have persisted the operator's edits — the discard
+    // audit event must preserve them (original vs final values ride along).
+    const graded = gradeExtractions(
+      draft.extraction,
+      draft.finalExtraction || draft.extraction,
+    ).map((g) => ({ ...g, status: 'discarded' }));
     // Discard resolves immediately; the status change guarantees one event.
     store.logEvalEvent({ draftId: draft.id, kind: draft.kind, action: 'discard', fields: graded });
     const resolved = store.resolveDraft(draft.id, {

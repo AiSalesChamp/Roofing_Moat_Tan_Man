@@ -44,7 +44,7 @@ Env: `FIELD_LOOP_PORT` (4680) · `FIELD_LOOP_DB` (data/field-loop.db) ·
 | Route | Purpose |
 |---|---|
 | `POST /api/drafts` | `{kind, sourceId, transcript, extraction}` → pending draft (or auto-commit) |
-| `GET /api/drafts?status=pending` | review queue |
+| `GET /api/drafts?status=pending,failed` | review queue (failed = confirm-retryable) |
 | `POST /api/drafts/:id/confirm` | optional `{extraction}` with edits → grade → Twenty write |
 | `POST /api/drafts/:id/discard` | log judgment, write nothing |
 | `GET /api/evals/accuracy` | per-field accuracy + autonomy eligibility |
