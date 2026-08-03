@@ -1,0 +1,36 @@
+{
+  "kind": "site-memo",
+  "sourceId": "seed-site-memo-001",
+  "transcriptFile": "../../../acquisition-voice/samples/site-memo.txt",
+  "notes": "Industrial warehouse drive-by with comp, cap-rate talk, and explicit offer intent.",
+  "golden": {
+    "documentMeta": {
+      "referenceTimestamp": null,
+      "transcriptComplete": true,
+      "noExtractableContent": false
+    },
+    "identity": {
+      "propertyAddress": { "street1": "1200 Industrial Blvd", "city": "Dallas", "state": "TX", "zip": "" },
+      "apn": null,
+      "propertyClass": "INDUSTRIAL"
+    },
+    "siteFindings": {
+      "inspectionType": "DRIVE_BY",
+      "conditionRating": "FAIR",
+      "accessNotes": "gate was open, met site manager briefly",
+      "occupancyObserved": "fully tenant occupied — single small logistics company",
+      "zoningNotes": "LI zoned",
+      "environmentalRedFlags": null,
+      "compsMentioned": [
+        { "address": "1150 Industrial", "salePrice": 1100000, "saleDate": null }
+      ],
+      "estimatedValue": { "value": 1150000, "quote": "Would offer around 1.15M subject to DD." },
+      "offerIntent": true,
+      "findingsSummary": "45k sqft warehouse (1985), LI zoned, single logistics tenant, roof fair, parking lot cracked east side. Comp: 1150 Industrial sold 1.1M. Asking 1.3M on LoopNet, cap ~7. No visible environmental issues; needs Phase I. Offer ~1.15M subject to DD."
+    },
+    "extractionMeta": {
+      "externalMemoId": "seed-site-memo-001",
+      "modelVersion": null
+    }
+  }
+}

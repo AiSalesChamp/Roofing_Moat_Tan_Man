@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1" />
+  <title>Field Jarvis — Lens</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- 600x600 stage = Ray-Ban Display right-lens canvas.
+       Desktop dev: arrow keys simulate the Neural Band (see input.js). -->
+  <div id="stage">
+    <div id="statusbar">
+      <span id="clock"></span>
+      <span id="conn" class="conn">●</span>
+    </div>
+    <main id="screen"></main>
+    <div id="hints"></div>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -18,7 +18,9 @@
   <nav class="tabs">
     <button type="button" data-screen="capture" class="active">Capture</button>
     <button type="button" data-screen="queue">Queue</button>
-    <button type="button" data-screen="settings">Settings</button>
+    <button type="button" data-screen="review">Review <span id="review-count" class="tab-count hidden">0</span></button>
+    <button type="button" data-screen="pipeline">Pipeline</button>
+    <button type="button" data-screen="settings">⚙</button>
   </nav>
 
   <main>
@@ -72,7 +74,23 @@
       <div id="queue-list"></div>
     </section>
 
+    <section id="screen-review" class="screen">
+      <div id="review-status" class="status-bar online">Drafts awaiting your confirm</div>
+      <div id="review-list"></div>
+    </section>
+
+    <section id="screen-pipeline" class="screen">
+      <button type="button" id="btn-pipeline-refresh" class="btn secondary">Refresh</button>
+      <div id="pipeline-list"></div>
+    </section>
+
     <section id="screen-settings" class="screen">
+      <label for="field-loop-url">Field-loop URL (drafts/review)</label>
+      <input id="field-loop-url" type="url" placeholder="http://127.0.0.1:4680" />
+
+      <label for="field-loop-secret">Field-loop secret (optional)</label>
+      <input id="field-loop-secret" type="password" placeholder="FIELD_LOOP_SECRET if set" />
+
       <label for="media-gateway-url">Media gateway URL (photos/audio)</label>
       <input id="media-gateway-url" type="url" placeholder="http://127.0.0.1:3081" />
 

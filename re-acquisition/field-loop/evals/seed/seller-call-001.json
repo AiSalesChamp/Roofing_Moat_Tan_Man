@@ -1,0 +1,38 @@
+{
+  "kind": "seller-call",
+  "sourceId": "seed-seller-call-001",
+  "transcriptFile": "../../../acquisition-voice/samples/seller-call-clean.txt",
+  "notes": "Inherited 5-acre land parcel, motivated seller relocating to Texas. Clean baseline call.",
+  "golden": {
+    "documentMeta": {
+      "referenceTimestamp": null,
+      "transcriptComplete": true,
+      "noExtractableContent": false
+    },
+    "identity": {
+      "sellerFullName": { "firstName": "Carlos", "lastName": "" },
+      "sellerEmail": null,
+      "leadPhoneE164": null,
+      "propertyAddress": { "street1": "Cave Creek Road", "city": "", "state": "", "zip": "" },
+      "apn": { "value": "123-45-678A", "quote": "Parcel number is 123-45-678A." },
+      "leadSource": null
+    },
+    "disposition": {
+      "callOutcome": "CONNECTED",
+      "sellerMotivation": ["inherited property", "relocating"],
+      "askingPrice": {
+        "value": 220000,
+        "quote": "We were thinking around two-twenty. Maybe flexible if it's a quick close."
+      },
+      "timelineToSell": "as soon as possible — moving to Texas next month",
+      "propertyConditionNotes": null,
+      "objections": null,
+      "followUpCommitment": "call back tomorrow with a written offer",
+      "dealTypeHint": ["land"]
+    },
+    "extractionMeta": {
+      "externalCallId": "seed-seller-call-001",
+      "modelVersion": null
+    }
+  }
+}

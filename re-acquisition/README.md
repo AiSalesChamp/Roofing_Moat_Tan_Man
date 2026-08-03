@@ -6,13 +6,23 @@ Real estate acquisition layer for the Twenty-20 fork.
 
 ```
 re-acquisition/
-├── property-capture/     # Mobile capture → n8n → Twenty
+├── property-capture/     # Mobile capture → n8n → Twenty (PWA: capture + review queue + pipeline glance)
 ├── acquisition-voice/    # Seller call / site memo LLM extraction
+├── field-loop/           # Draft-and-confirm sidecar: pending drafts, eval log, autonomy ratchet
+├── glasses-app/          # Ray-Ban Display web app (600x600, Neural Band pinch-to-confirm)
 ├── contracts/            # PDF generation + DocuSeal e-sign → Twenty
 └── land-funnel/          # Land wholesale-first funnel playbook (docs + static HTML preview)
 
 packages/twenty-apps/re-acquisition/   # Twenty SDK app (install this)
 ```
+
+## Draft-and-confirm loop (field layer)
+
+Voice extractions no longer write straight to Twenty. They land as pending
+drafts in `field-loop/`; a human confirms/edits from the PWA Review tab (or
+pinch-confirms on the glasses app), and the confirm fires the CRM upsert.
+Every resolution feeds an eval log that earns per-field autonomy over time.
+Start here: `field-loop/README.md`. Fork policy: `TWENTY-FORK-HYGIENE.md`.
 
 ## Install
 

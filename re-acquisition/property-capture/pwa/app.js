@@ -1,6 +1,15 @@
 import { getSetting, setSetting, saveCapture, listCaptures, deleteCapture } from './db.js';
 import { processQueue, syncCapture } from './sync.js';
 import { sha256, uuid, nowIso, getTimezone, reverseGeocode } from './utils.js';
+import {
+  listPendingDrafts,
+  confirmDraft,
+  discardDraft,
+  getPipeline,
+  buildEditedExtraction,
+  renderDraftCard,
+  renderPipeline,
+} from './review.js';
 
 const photos = [];
 let mediaRecorder = null;
@@ -16,6 +25,8 @@ function showScreen(name) {
   $(`#screen-${name}`).classList.add('active');
   document.querySelector(`nav.tabs button[data-screen="${name}"]`).classList.add('active');
   if (name === 'queue') renderQueue();
+  if (name === 'review') renderReview();
+  if (name === 'pipeline') renderPipelineScreen();
 }
 
 function updateNetwork() {
@@ -52,6 +63,8 @@ function renderPhotoGrid() {
 }
 
 async function loadSettings() {
+  $('#field-loop-url').value = await getSetting('fieldLoopUrl', 'http://127.0.0.1:4680');
+  $('#field-loop-secret').value = await getSetting('fieldLoopSecret', '');
   $('#media-gateway-url').value = await getSetting(
     'mediaGatewayUrl',
     'http://127.0.0.1:3081',
@@ -68,6 +81,8 @@ async function loadSettings() {
 
 async function saveSettings() {
   const secret = $('#webhook-secret').value;
+  await setSetting('fieldLoopUrl', $('#field-loop-url').value.trim() || 'http://127.0.0.1:4680');
+  await setSetting('fieldLoopSecret', $('#field-loop-secret').value);
   await setSetting('mediaGatewayUrl', $('#media-gateway-url').value.trim());
   await setSetting('n8nBaseUrl', $('#n8n-url').value.trim());
   await setSetting('webhookSecret', secret);
@@ -270,6 +285,83 @@ async function renderQueue() {
   });
 }
 
+// --- Review queue (field-loop drafts) ---
+
+async function refreshReviewCount() {
+  const badge = $('#review-count');
+  try {
+    const drafts = await listPendingDrafts();
+    badge.textContent = drafts.length;
+    badge.classList.toggle('hidden', drafts.length === 0);
+  } catch {
+    badge.classList.add('hidden');
+  }
+}
+
+async function renderReview() {
+  const list = $('#review-list');
+  const status = $('#review-status');
+  list.innerHTML = '<p style="color:var(--muted)">Loading drafts…</p>';
+  let drafts;
+  try {
+    drafts = await listPendingDrafts();
+  } catch (err) {
+    status.className = 'status-bar offline';
+    status.textContent = `Field-loop unreachable: ${err.message}`;
+    list.innerHTML =
+      '<p style="color:var(--muted)">Start the sidecar: <code>node re-acquisition/field-loop/server/server.js</code>, or set its URL in Settings.</p>';
+    return;
+  }
+  status.className = 'status-bar online';
+  status.textContent = drafts.length
+    ? `${drafts.length} draft${drafts.length === 1 ? '' : 's'} awaiting confirm`
+    : 'Review queue is clear';
+  list.innerHTML = drafts.length
+    ? drafts.map(renderDraftCard).join('')
+    : '<p style="color:var(--muted)">Nothing to review. New voice extractions land here first.</p>';
+
+  list.querySelectorAll('.draft-card').forEach((card) => {
+    const id = card.dataset.draftId;
+    const draft = drafts.find((d) => d.id === id);
+    card.querySelector('.confirm-draft-btn').onclick = async () => {
+      const { extraction, edited } = buildEditedExtraction(draft, card);
+      card.querySelector('.confirm-draft-btn').disabled = true;
+      try {
+        await confirmDraft(id, edited ? extraction : null);
+        card.remove();
+      } catch (err) {
+        alert(`Confirm failed: ${err.message}`);
+        card.querySelector('.confirm-draft-btn').disabled = false;
+      }
+      refreshReviewCount();
+    };
+    card.querySelector('.discard-draft-btn').onclick = async () => {
+      if (!confirm('Discard this draft? Nothing is written to the CRM.')) return;
+      try {
+        await discardDraft(id);
+        card.remove();
+      } catch (err) {
+        alert(`Discard failed: ${err.message}`);
+      }
+      refreshReviewCount();
+    };
+  });
+  refreshReviewCount();
+}
+
+// --- Pipeline glance (read-only from Twenty via field-loop) ---
+
+async function renderPipelineScreen() {
+  const el = $('#pipeline-list');
+  el.innerHTML = '<p style="color:var(--muted)">Loading pipeline…</p>';
+  try {
+    el.innerHTML = renderPipeline(await getPipeline());
+  } catch (err) {
+    el.innerHTML = `<p style="color:var(--muted)">Pipeline unavailable: ${err.message}.<br>
+      The field-loop sidecar needs <code>TWENTY_API_KEY</code> to read the CRM.</p>`;
+  }
+}
+
 document.querySelectorAll('nav.tabs button').forEach((btn) => {
   btn.onclick = () => showScreen(btn.dataset.screen);
 });
@@ -298,7 +390,11 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
+$('#btn-pipeline-refresh').onclick = renderPipelineScreen;
+
 setupRecorder();
 loadSettings();
 updateNetwork();
 renderPhotoGrid();
+refreshReviewCount();
+setInterval(refreshReviewCount, 30000);

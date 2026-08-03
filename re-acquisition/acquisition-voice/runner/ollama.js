@@ -11,7 +11,10 @@ export function loadPrompt(kind = 'seller-call') {
     join(ROOT, `prompts/${kind}-system-prompt.md`),
     'utf8',
   );
-  return `${shared}\n\n${system}\n\nRespond with ONLY valid JSON matching the schema. No markdown fences.`;
+  // Embed the actual schema: model-agnostic prompts. Referencing the schema by
+  // filename only worked for models that guessed the shape correctly.
+  const schema = JSON.stringify(loadSchema(kind), null, 2);
+  return `${shared}\n\n${system}\n\nOutput MUST match this JSON Schema exactly (all four top-level blocks required, no extra properties):\n${schema}\n\nRespond with ONLY valid JSON matching the schema. No markdown fences.`;
 }
 
 export function loadSchema(kind = 'seller-call') {
@@ -40,7 +43,9 @@ export async function extractWithOllama({
     body: JSON.stringify({
       model,
       stream: false,
-      format: 'json',
+      // Structured outputs (Ollama ≥0.5): constrained decoding against the
+      // extraction schema — stronger guarantee than free-form 'json' mode.
+      format: loadSchema(kind),
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userContent },

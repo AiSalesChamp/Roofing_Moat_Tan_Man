@@ -1,0 +1,112 @@
+/* Ray-Ban Display lens UI: 600x600, monocular, sunlight-legible.
+   Rules: black background (transparent on lens), huge type, one decision
+   per screen, no fine detail. */
+
+:root {
+  --bg: #000;
+  --text: #fff;
+  --muted: #9ab;
+  --accent: #4fc3f7;
+  --ok: #6fdf8f;
+  --warn: #ffcf5c;
+  --danger: #ff7a70;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #14181c; /* dev backdrop; the stage itself is lens-black */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: system-ui, sans-serif;
+}
+
+#stage {
+  width: 600px;
+  height: 600px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid #333; /* dev affordance only */
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#statusbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 18px 28px 0;
+  font-size: 20px;
+  color: var(--muted);
+}
+
+.conn.ok { color: var(--ok); }
+.conn.bad { color: var(--danger); }
+
+#screen {
+  flex: 1;
+  padding: 20px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#hints {
+  padding: 0 28px 20px;
+  font-size: 18px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* HOME */
+.home-count { font-size: 120px; font-weight: 700; text-align: center; line-height: 1; }
+.home-label { font-size: 30px; text-align: center; color: var(--muted); margin-top: 12px; }
+.home-clear { font-size: 40px; text-align: center; color: var(--ok); }
+
+/* LIST */
+.list-item {
+  padding: 14px 20px;
+  border-radius: 14px;
+  font-size: 28px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.list-item .sub { font-size: 20px; color: var(--muted); }
+.list-item.selected { background: rgba(79, 195, 247, 0.22); outline: 2px solid var(--accent); }
+
+/* CARD */
+.card-title { font-size: 34px; font-weight: 700; margin-bottom: 4px; }
+.card-sub { font-size: 20px; color: var(--muted); margin-bottom: 16px; }
+.card-fields { flex: 1; overflow: hidden; }
+.card-field { padding: 8px 0; border-bottom: 1px solid #222; }
+.card-field.selected { background: rgba(79, 195, 247, 0.12); }
+.card-field .k { font-size: 18px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.card-field .v { font-size: 26px; }
+.card-field .v.high { color: var(--warn); }
+
+.actions { display: flex; gap: 14px; margin-top: 18px; }
+.action {
+  flex: 1;
+  text-align: center;
+  padding: 16px 8px;
+  border-radius: 16px;
+  font-size: 26px;
+  font-weight: 700;
+  border: 2px solid #333;
+  color: var(--muted);
+}
+.action.selected { border-color: var(--accent); color: var(--text); background: rgba(79, 195, 247, 0.18); }
+.action.confirm.selected { border-color: var(--ok); background: rgba(111, 223, 143, 0.18); }
+.action.discard.selected { border-color: var(--danger); background: rgba(255, 122, 112, 0.16); }
+
+/* RESULT flash */
+.result { text-align: center; }
+.result .icon { font-size: 110px; }
+.result .msg { font-size: 32px; margin-top: 10px; }
+.result.ok .icon { color: var(--ok); }
+.result.err .icon { color: var(--danger); }

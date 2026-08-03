@@ -1,0 +1,12 @@
+{
+  "name": "field-loop",
+  "version": "0.1.0",
+  "description": "Draft-and-confirm loop sidecar: pending CRM drafts, eval log, autonomy ratchet",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node --test tests/",
+    "backtest": "node scripts/backtest.js"
+  }
+}

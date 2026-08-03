@@ -1,5 +1,5 @@
-const CACHE = 're-capture-v1';
-const ASSETS = ['/', '/index.html', '/styles.css', '/app.js', '/db.js', '/sync.js', '/utils.js', '/manifest.json'];
+const CACHE = 're-capture-v2';
+const ASSETS = ['/', '/index.html', '/styles.css', '/app.js', '/db.js', '/sync.js', '/utils.js', '/review.js', '/manifest.json'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));

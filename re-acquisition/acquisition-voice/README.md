@@ -37,3 +37,20 @@ acquisition-voice/
 High-stakes fields (price, APN, dates) use `{value, quote}` — no quote means value is dropped.
 
 See `twenty-field-mapping.md` for REST payload shapes.
+
+## Runner output modes
+
+```bash
+cd runner
+node index.js --transcript ../samples/seller-call-clean.txt --call-id call-1
+```
+
+- **Default**: extraction is submitted as a **pending draft** to the field-loop
+  sidecar (`FIELD_LOOP_URL`, default `http://127.0.0.1:4680`) for human
+  confirm — see `../field-loop/README.md`.
+- `--direct`: legacy behavior, write straight to Twenty (no review loop).
+- `--dry-run`: print the extraction JSON only.
+
+Extraction uses Ollama structured outputs: the JSON schema is passed as the
+`format` constraint and embedded in the system prompt, so any capable local
+model (`OLLAMA_MODEL`) produces schema-valid JSON.

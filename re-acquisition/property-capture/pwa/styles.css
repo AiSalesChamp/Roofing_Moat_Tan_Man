@@ -197,3 +197,114 @@ button.record.recording { background: #e33; animation: pulse 1s infinite; }
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+/* --- Review queue (field-loop drafts) --- */
+
+.tab-count {
+  display: inline-block;
+  min-width: 18px;
+  padding: 1px 5px;
+  border-radius: 99px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.draft-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.draft-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.draft-head .addr { font-weight: 600; font-size: 1.05rem; }
+.draft-head .meta { font-size: 0.78rem; color: var(--muted); }
+.draft-empty { color: var(--muted); }
+
+.field-row { margin-bottom: 10px; }
+.field-row input { margin-bottom: 2px; }
+
+.field-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.field-quote {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
+.pill {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 99px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.pill.risk-high { background: rgba(204, 68, 68, 0.18); color: #f88; }
+.pill.risk-low { background: rgba(80, 140, 220, 0.18); color: #9cf; }
+.pill.auto { background: rgba(42, 136, 102, 0.2); color: var(--ok); }
+
+.draft-actions { display: flex; gap: 8px; margin-top: 12px; }
+.draft-actions .btn { margin-bottom: 0; }
+.draft-actions .confirm-draft-btn { flex: 2; }
+.draft-actions .discard-draft-btn { flex: 1; }
+
+/* --- Pipeline glance --- */
+
+.pipe-stage {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+
+.pipe-stage.empty { opacity: 0.5; }
+
+.pipe-head {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.pipe-count {
+  background: var(--border);
+  border-radius: 99px;
+  padding: 0 8px;
+  font-size: 0.75rem;
+  align-self: center;
+}
+
+.pipe-deal {
+  font-size: 0.85rem;
+  color: var(--text);
+  padding: 4px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+.pipe-price { color: var(--ok); font-size: 0.78rem; }
+.pipe-more { color: var(--muted); font-size: 0.75rem; padding-top: 4px; }

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Field Loop — Extraction Accuracy</title>
+  <style>
+    :root {
+      --bg: #0f1419; --panel: #1a2129; --border: #2a3441; --text: #e6edf3;
+      --muted: #8b98a5; --green: #3fb950; --amber: #d29922; --red: #f85149; --sky: #58a6ff;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body { background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans-serif; padding: 24px; }
+    h1 { font-size: 1.3rem; margin-bottom: 4px; }
+    .sub { color: var(--muted); margin-bottom: 20px; }
+    .cards { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; min-width: 150px; }
+    .card .num { font-size: 1.7rem; font-weight: 700; }
+    .card .lbl { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    th, td { padding: 9px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    tr:last-child td { border-bottom: none; }
+    .bar { background: #21262d; border-radius: 4px; height: 8px; width: 130px; display: inline-block; vertical-align: middle; overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: 4px; }
+    .pill { font-size: 0.72rem; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+    .pill.high { background: rgba(248,81,73,0.15); color: var(--red); }
+    .pill.low { background: rgba(88,166,255,0.15); color: var(--sky); }
+    .pill.auto { background: rgba(63,185,80,0.15); color: var(--green); }
+    .pill.manual { background: rgba(210,153,34,0.15); color: var(--amber); }
+    .empty { color: var(--muted); padding: 32px; text-align: center; }
+    .err { color: var(--red); }
+    code { color: var(--muted); font-size: 0.82em; }
+    a { color: var(--sky); }
+    .links { margin-top: 20px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <h1>Extraction Accuracy</h1>
+  <div class="sub">Eval log from the draft-and-confirm loop. Autonomy is earned per field — this table is the ratchet.</div>
+  <div class="cards" id="cards"></div>
+  <table>
+    <thead>
+      <tr><th>Field</th><th>Risk</th><th>Samples</th><th>Accuracy</th><th>Threshold</th><th>Autonomy</th></tr>
+    </thead>
+    <tbody id="rows"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+  </table>
+  <div class="links">
+    <a href="/app/">Capture PWA</a> · <a href="/glasses/">Glasses app</a> ·
+    <code>GET /api/evals/accuracy</code>
+  </div>
+  <script>
+    const pct = (n) => `${(n * 100).toFixed(1)}%`;
+    const barColor = (f) => f.eligible ? 'var(--green)' : f.accuracy >= f.threshold.minAccuracy ? 'var(--amber)' : 'var(--red)';
+
+    async function load() {
+      const cards = document.getElementById('cards');
+      const rows = document.getElementById('rows');
+      try {
+        const [acc, health] = await Promise.all([
+          fetch('/api/evals/accuracy').then((r) => r.json()),
+          fetch('/api/health').then((r) => r.json()),
+        ]);
+        cards.innerHTML = [
+          { num: health.pendingDrafts, lbl: 'Pending drafts' },
+          { num: acc.gradedEvents, lbl: 'Graded events' },
+          { num: acc.overall.samples ? pct(acc.overall.accuracy) : '—', lbl: 'Overall accuracy' },
+          { num: acc.fields.filter((f) => f.eligible).length, lbl: 'Autonomous fields' },
+          { num: acc.autonomyEnabled ? 'ON' : 'OFF', lbl: 'Autonomy ratchet' },
+          { num: health.twentyConfigured ? 'LIVE' : 'LOCAL', lbl: 'Twenty writes' },
+        ].map((c) => `<div class="card"><div class="num">${c.num}</div><div class="lbl">${c.lbl}</div></div>`).join('');
+
+        if (!acc.fields.length) {
+          rows.innerHTML = '<tr><td colspan="6" class="empty">No graded evals yet. Confirm or edit drafts in the PWA review queue to start the log.</td></tr>';
+          return;
+        }
+        rows.innerHTML = acc.fields.map((f) => `
+          <tr>
+            <td>${f.label}<br><code>${f.path}</code></td>
+            <td><span class="pill ${f.riskClass}">${f.riskClass}</span></td>
+            <td>${f.samples}</td>
+            <td><span class="bar"><i style="width:${Math.min(100, f.accuracy * 100)}%;background:${barColor(f)}"></i></span> ${pct(f.accuracy)}</td>
+            <td><code>≥${pct(f.threshold.minAccuracy)} @ n≥${f.threshold.minSamples}</code></td>
+            <td>${f.eligible
+              ? '<span class="pill auto">auto-commit</span>'
+              : f.requiresManualEnable && !f.manuallyEnabled && f.samples >= f.threshold.minSamples && f.accuracy >= f.threshold.minAccuracy
+                ? '<span class="pill manual">needs manual enable</span>'
+                : '<span class="pill low">human confirm</span>'}</td>
+          </tr>`).join('');
+      } catch (err) {
+        rows.innerHTML = `<tr><td colspan="6" class="empty err">Failed to load: ${err.message}</td></tr>`;
+      }
+    }
+    load();
+    setInterval(load, 10000);
+  </script>
+</body>
+</html>
